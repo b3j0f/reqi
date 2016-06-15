@@ -24,47 +24,57 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Specification of the Scope.
-
-Equivalent of the FROM in SQL"""
-
-from .base import AliasedRequest
-
-class Scope(AliasedRequest):
-    """Equivalent of FROM in SQL."""
+"""Specification of the request object."""
 
 
-class ElementaryScope(Scope):
-    """Elementary scope."""
+class Request(object):
+    """Default request object."""
 
-    def __init__(self, system=None, model=None, *args, **kwargs):
+    def __init__(
+            self, system=None, schema=None, alias=None,
+            *args, **kwargs
+    ):
         """
         :param str system: system name.
-        :param str model: model name.
+        :param str schema: schema name.
+        :param str alias: alias name.
         """
 
-        super(ElementaryScope, self).__init__(*args, **kwargs)
+        super(Request, self).__init__(*args, **kwargs)
 
         self.system = system
-        self.model = model
+        self.schema = schema
+        self.alias = alias
 
     def context(self):
+        """Get used system and model names.
 
-        return set([self.system]), set([self.model])
-
-
-class CompositeScope(Scope):
-    """Scope composed of a read."""
-
-    def __init__(self, read, *args, **kwargs):
-        """
-        :param Read read: read from where get elements to CRUD.
+        :return: this system and model names.
+        :rtype: tuple of 2 sets
         """
 
-        super(CompositeScope, self).__init__(*args, **kwargs)
+        systems = [] if self.system is None else [self.system]
+        schemas = [] if self.schema is None else [self.schema]
 
-        self.read = read
+        return systems, schemas
 
-    def context(self):
+    def update(self, alias):
+        """Update this request related to input alias.
 
-        return self.read.context()
+        :param dict alias: set of (alias name, request)."""
+
+        if self.alias is not None:
+
+            if self.alias in alias:
+                toupdate = alias[self.alias]
+                self._update(request=toupdate)
+
+            alias[self.alias] = self
+
+    def _update(self, request):
+        """to override in order to update this context from input request.
+
+        :param request: """
+
+        self.system = request.system or self.system
+        self.schema = request.schema or self.schema

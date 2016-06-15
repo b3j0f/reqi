@@ -26,28 +26,15 @@
 
 """Specification of the dispatcher interface."""
 
-from b3j0f.schema import Schema
 from b3j0f.schema.prop import SchemaProperty
 
-from re import compile as re_compile
+from .query import Query
 
 NAME_SEPARATOR = '/'
 
 
 class Dispatcher(object):
     """In charge of dispatching requests."""
-
-    class QueryAnalyzer(object):
-
-        def __init__(
-                self, dispatcher, *args, **kwargs
-        ):
-
-            super(QueryAnalyzer, self).__init__(*args, **kwargs)
-
-            self.query = query
-            self.dispatcher = dispatcher
-            self.alias = {}
 
     def __init__(self, systems, *args, **kwargs):
         """
@@ -57,6 +44,8 @@ class Dispatcher(object):
         super(Dispatcher, self).__init__(*args, **kwargs)
 
         self.systems = systems
+
+        self._loadsystems()
 
     def getsystemswithschemas(
             self, system=None, schema=None, prop=None,
@@ -80,16 +69,16 @@ class Dispatcher(object):
 
             else:
                 defaultsystems = [
-                    system
-                    for schema in defaultschemas
-                    for system in self._systemsbyschema[schema]
+                    _system
+                    for _schema in defaultschemas
+                    for _system in self._systemsbyschema[_schema]
                 ]
 
         if defaultschemas is None:
             defaultschemas = [
-                schema
-                for system in defaultsystems
-                for schema in self._schemasbysystem[system]
+                _schema
+                for _system in defaultsystems
+                for _schema in self._schemasbysystem[_system]
             ]
 
         if system is not None:
@@ -129,15 +118,15 @@ class Dispatcher(object):
                         system
                         for schema in schemas
                         for system in self._systemsbyschema[schema]
-                            if system in defaultsystems
+                        if system in defaultsystems
                     ]
 
                 else:
                     schemas = [
                         schema
                         for schemas in self._schemasbyprop[prop]
-                            if schema in self._schemasbysystem[system]
-                                and schema in defaultschemas
+                        if schema in self._schemasbysystem[system]
+                        and schema in defaultschemas
                     ]
 
             else:
@@ -151,58 +140,6 @@ class Dispatcher(object):
         _removeoccurences(schemas)
 
         return systems, schemas
-
-    def getdependencysystemswithschemas(systems=None, schemas=None):
-
-        result = []
-
-        if props is None:
-            props = set()
-
-        elif isinstance(props, string_types):
-            props = set([props])
-
-        else:
-            props = set(props)
-
-        if schemas is None:
-            schemas = set()
-
-        elif isinstance(schemas, string_types):
-            schemas = set([schemas])
-
-        else:
-            props = set(props)
-
-        if systems is None:
-            systems = set()
-
-        elif isinstance(systems, string_types):
-            systems = set([systems])
-
-        else:
-            systems = set(systems)
-
-        for prop in props
-            if prop not in self._propsperschemas:
-                raise ValueError('Unknown property name {0}'.format(prop))
-
-            schema |= set(self._propsperschemas[prop])
-
-        for schema in schemas:
-            if schema not in self._schemasdependencies:
-                raise ValueError('Unknown schema name {0}'.format(schema))
-
-            result |= set(self._schemasdependencies[schema])
-            systems |= set(self._schemasdependencies[schema])
-
-        for system in systems:
-
-
-        if system is not None:
-            result += self._systemdependencies[system.name]
-
-        return result
 
     def getsysschpro(self, name):
 
@@ -235,6 +172,7 @@ class Dispatcher(object):
         self._systemsbyschema = {}
         self._schemasbysystem = {}
         self._schemasbyprop = {}
+        self._dependenciesbyschema = {}
         self._propsbyschema = {}
         self._dimensionsbysystem = {}
         self._systemsbydimension = {}
@@ -271,43 +209,51 @@ class Dispatcher(object):
                     self._propsbyschema.setdefault(suid, {})[pname] = prop
                     self._schemasbyprop.setdefault(pname, {})[suid] = schema
 
-                    if isinstance(prop, SchemaProperty)
+                    if isinstance(prop, SchemaProperty):
+                        self._dependenciesbyschema.setdefault(
+                            suid, {}
+                        )[prop.name] = prop.schema
 
             # add dimensions
             for dimension in system.dimensions():
                 dname = dimension.name
-                self._dimensionsbysystem.setdefault(sname, {})[dname] = dimension
+                self._dimensionsbysystem.setdefault(
+                    sname, {}
+                )[dname] = dimension
                 self._systemsbydimension.setdefault(dname, {})[sname] = system
 
+    def getdependencies(self, systems=None, schemas=None):
+
+        result = {}, {}
+
+        for system in systems:
+            result[0][system] = self._dependenciesbysystem[system]
+
+        for schema in schemas:
+            result[1][schema] = self._dependenciesbyschema[schema]
+
+        return result
+
     def run(
-            self, scope=None, filter=None, read=None, create=None, update=None,
+            self, scope=None, cond=None, read=None, create=None, update=None,
             delete=None
     ):
         """Run input query.
 
-        :param Node(s) scope:
-        :param C(s) filter:
-        :param Expression(s) read:
-        :param A(s) create:
-        :param A(s) update;"""
+        :param list scope: list of Nodes.
+        :param list cond: list of Cconditions.
+        :param list read: list of Expressions.
+        :param list create: list of Assignment.
+        :param list update: list of Assignment.
+        :param list delete: list of Conditions."""
 
-        dsystem = query.system  # get default system
+        query = Query(self, scope=scope, cond=cond, read=read, create=create,
+            update=update, delete=delete
+        )
 
-        scopespersystem = {}
+        result = query.execute()
 
-        for pname in ['scope', 'select', 'where', 'update', 'create', 'delete']:
-
-            parts = getattr(query, pname)
-
-            for part in parts:
-                psystem = part.system
-                if psystem is None:
-                    psystem = dsystem
-
-                if psystem is None:
-                    raise RuntimeError()
-
-                scopespersystem.setdefault(psystem)
+        return result
 
 
 def _removeoccurences(l):

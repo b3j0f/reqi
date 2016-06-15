@@ -28,10 +28,12 @@
 
 Equivalent to the UPDATE statement in SQL."""
 
-from .base import ConditionalRequest
+from .base import Request
+
+from .utils import getcontext, updaterequest
 
 
-class Properties(object):
+class Assignment(Request):
     """In charge of refering model properties to update."""
 
     def __init__(self, pset=None, punset=None, *args, **kwargs):
@@ -39,25 +41,36 @@ class Properties(object):
         :param dict pset: properties to set. Key are property name, values are
             constant values or
         :param list punset: property names to unset.
-
-        In both parameters, dictionaries are a set of key, value where key are
-        property names to update, and
         """
 
-        super(Properties, self).__init__(*args, **kwargs)
+        super(Assignment, self).__init__(*args, **kwargs)
 
-        self.pset = pset
-        self.unset = punset
+        self.pset = pset or {}
+        self.punset = punset or {}
+
+    def context(self, *args, **kwargs):
+
+        systems, schemas = super(Assignment, self).context(*args, **kwargs)
+
+        fillwithpropertycontext(systems, schemas, self.pset)
+        fillwithpropertycontext(systems, schemas, self.punset)
+
+    def update(self, alias, *args, **kwargs):
+
+        super(Assignment, self).update(alias=alias, *args, **kwargs)
+
+        updaterequest(tuple(self.pset.values()), alias=alias)
+        updaterequest(tuple(self.punset.values()), alias=alias)
 
 
-class Update(ConditionalRequest):
-    """In charge of updating models."""
+def fillwithpropertycontext(systems, schemas, attr, *args, **kwargs):
+    """Fill input systems and schemas with property context"""
 
-    def __init__(self, props, conditions=None, *args, **kwargs):
-        """
-        :param Properties props: props to set.
+    if attr is not None:
+        for pname in attr:
+            pval = attr[pname]
 
-        """
-        super(Update, self).__init__(*args, **kwargs)
+            psystems, pschemas = getcontext(pval, *args, **kwargs)
 
-        self.props = props
+            systems += [item for item in psystems if item not in systems]
+            schemas += [item for item in pschemas if item not in schemas]

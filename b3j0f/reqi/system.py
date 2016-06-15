@@ -30,16 +30,22 @@ class System(object):
     """In charge of dispatching requests."""
 
     def __init__(
-    		self, name, dependencies=None, schemas=None, dimensions=None,
-    		*args, **kwargs
+    		self, name,
+            schema=None, dependencies=None, schemas=None, dimensions=None,
+            *args, **kwargs
     ):
         """
-        :param dict systems: set of (system name, system dependency names)
+        :param str name: system name.
+        :param b3j0f.schema.Schema schema: system schema.
+        :param list of System dependencies: list of system dependencies.
+        :param list schemas: supported schemas.
+        :param list dimensions: list of supported dimensions.
         """
 
         super(System, self).__init__(*args, **kwargs)
 
         self.name = name
+        self.schema = schema
         self.dependencies = dependencies or []
         self.schemas = schemas or []
         self.dimensions = dimensions or []
