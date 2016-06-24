@@ -28,49 +28,30 @@
 
 Equivalent to the UPDATE statement in SQL."""
 
-from .base import Request
-
-from .utils import getcontext, updaterequest
+from .core import Request
 
 
-class Assignment(Request):
-    """In charge of refering model properties to update."""
+class Update(Request):
+    """In charge of refering model properties to create/update.
+
+    Properties are:
+
+    - pset: used to set model properties.
+    - punset: used only if this is an update element (ref must be not None).
+    - ref: referes to a filter for update elements. If None, this is just an
+        element creation (and punset is useless)."""
+
+    __slots__ = ['pset', 'punset', 'ref']
 
     def __init__(self, pset=None, punset=None, *args, **kwargs):
         """
         :param dict pset: properties to set. Key are property name, values are
             constant values or
         :param list punset: property names to unset.
+        :param ref: refers to a filter (function) or an alias of a filter.
         """
 
-        super(Assignment, self).__init__(*args, **kwargs)
+        super(Update, self).__init__(*args, **kwargs)
 
         self.pset = pset or {}
         self.punset = punset or {}
-
-    def context(self, *args, **kwargs):
-
-        systems, schemas = super(Assignment, self).context(*args, **kwargs)
-
-        fillwithpropertycontext(systems, schemas, self.pset)
-        fillwithpropertycontext(systems, schemas, self.punset)
-
-    def update(self, alias, *args, **kwargs):
-
-        super(Assignment, self).update(alias=alias, *args, **kwargs)
-
-        updaterequest(tuple(self.pset.values()), alias=alias)
-        updaterequest(tuple(self.punset.values()), alias=alias)
-
-
-def fillwithpropertycontext(systems, schemas, attr, *args, **kwargs):
-    """Fill input systems and schemas with property context"""
-
-    if attr is not None:
-        for pname in attr:
-            pval = attr[pname]
-
-            psystems, pschemas = getcontext(pval, *args, **kwargs)
-
-            systems += [item for item in psystems if item not in systems]
-            schemas += [item for item in pschemas if item not in schemas]

@@ -1,9 +1,10 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,32 +25,16 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Specification of the request object."""
+
+from unittest import main
+
+from ..location import Location
+from .base import DimensionTest
 
 
-class Request(object):
-    """Default request object."""
+class LocationTest(DimensionTest):
 
-    __slots__ = ['system', 'schema', 'alias', 'ref']
+    CLS = Location
 
-    def __init__(
-            self, system=None, schema=None, alias=None, ref=None,
-            *args, **kwargs
-    ):
-        """
-        :param str system: system name.
-        :param str schema: schema name.
-        :param str alias: alias name for the couple system/schema.
-        :param ref: alias reference. Alias name or reference to a request.
-        """
-
-        super(Request, self).__init__(*args, **kwargs)
-
-        self.system = system
-        self.schema = schema
-        self.alias = alias
-        self.ref = ref
-
-    def process(self, dispatcher):
-
-        raise NotImplementedError()
+if __name__ == '__main__':
+    main()

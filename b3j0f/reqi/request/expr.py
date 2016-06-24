@@ -28,13 +28,14 @@
 
 from .core import Request
 
-from .utils import getcontext, updaterequest
-
 from numbers import Number
 
 # list of default function names (prop is None).
 # existing property
 EXISTS = 'exists'
+
+# delete elements
+DELETE = 'delete'
 
 # regex functions
 LIKE = 'like'
@@ -95,6 +96,8 @@ HEX = 'hex'
 class Expression(Request):
     """Expression request object."""
 
+    __slots__ = ['prop']
+
     def __init__(self, prop, *args, **kwargs):
         """
         :param str prop: property name.
@@ -103,12 +106,6 @@ class Expression(Request):
         super(Expression, self).__init__(*args, **kwargs)
 
         self.prop = prop
-
-    def _update(self, request, *args, **kwargs):
-
-        super(Expression, self)._update(request=request, *args, **kwargs)
-
-        self.prop = request.prop or self.prop
 
     # boolean functions
     def __and__(self, value):
@@ -261,7 +258,9 @@ class Expression(Request):
 class FuncRequest(Expression):
     """Func request object.
 
-    The function name is the property name."""
+    The function name is the expression property name."""
+
+    __slots__ = ['params', 'rtype']
 
     def __init__(self, params=None, rtype=None, *args, **kwargs):
         """
@@ -273,17 +272,3 @@ class FuncRequest(Expression):
 
         self.params = [] if params is None else params
         self.rtype = rtype
-
-    def context(self, *args, **kwargs):
-
-        systems, schemas = super(FuncRequest, self).context(*args, **kwargs)
-
-        getcontext(self.params, systems, schemas)
-
-        return systems, schemas
-
-    def update(self, *args, **kwargs):
-
-        super(FuncRequest, self).update(*args, **kwargs)
-
-        updaterequest(self.params, *args, **kwargs)

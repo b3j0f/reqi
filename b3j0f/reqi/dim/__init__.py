@@ -24,32 +24,12 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Specification of the request object."""
+from __future__ import absolute_import
 
+__all__ = ['Dimension', 'Location', 'Time']
 
-class Request(object):
-    """Default request object."""
+"""Package dimension."""
 
-    __slots__ = ['system', 'schema', 'alias', 'ref']
-
-    def __init__(
-            self, system=None, schema=None, alias=None, ref=None,
-            *args, **kwargs
-    ):
-        """
-        :param str system: system name.
-        :param str schema: schema name.
-        :param str alias: alias name for the couple system/schema.
-        :param ref: alias reference. Alias name or reference to a request.
-        """
-
-        super(Request, self).__init__(*args, **kwargs)
-
-        self.system = system
-        self.schema = schema
-        self.alias = alias
-        self.ref = ref
-
-    def process(self, dispatcher):
-
-        raise NotImplementedError()
+from .base import Dimension
+from .location import Location
+from .time import Time

@@ -24,7 +24,7 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-__all__ = ['getcontext', 'updaterequest']
+__all__ = ['getcontext', 'updateref', 'copy']
 
 """Specification of the request object."""
 
@@ -35,45 +35,110 @@ from six import string_types
 from .core import Request
 
 
-def getcontext(request, systems=None, schemas=None):
+def getcontext(req, systems=None, schemas=None):
     """Get context from a request depending on nature of the request.
 
-    :param request: Handled types : Request and list of Request.
+    :param req: Handled types : Request and list of Request.
     :return: request context.
     :rtype: tuple."""
 
-    result = (systems or [], schemas or [])
+    if systems is None:
+        systems = []
 
-    if isinstance(request, Request):
-        rsystems, rschemas = request.context()
+    if schemas is None:
+        schemas = []
 
-        result[0] += [item for item in rsystems if item not in result[0]]
-        result[1] += [item for item in rschemas if item not in result[1]]
+    result = systems, schemas
+
+    if isinstance(req, Request):
+        if req.system is not None:
+            result[0].append(req.system)
+
+        if req.schema is not None:
+            result[1].append(req.schema)
+
+        def getcontextslot(_, attr):
+
+            getcontext(attr, result[0], result[1])
+
+        _parseworef(req, getcontextslot)
 
     elif (
-            isinstance(request, Iterable)
-            and not isinstance(request, string_types)
+            isinstance(req, Iterable)
+            and not isinstance(req, string_types)
     ):
-        for item in request:
-            getcontext(item, systems=result[0], schemas=result[1])
+        map(
+            lambda item: getcontext(item, systems=result[0], schemas=result[1]),
+            req
+        )
 
     return result
 
 
-def updaterequest(request, alias):
-    """Update request properties related to alias.
+def updateref(req, alias=None):
+    """Update request references related to input alias.
 
-    :param Request: request to update with alias.
+    :param Request: req to update with alias.
     :param dict alias: set of (alias name, Request).
     """
 
-    if isinstance(request, Request):
-        request.update(alias)
+    if alias is None:
+        alias = {}
+
+    if isinstance(req, Request):
+        if req.alias is not None:
+            alias[req.alias] = req
+
+        if req.ref is not None:
+            req.ref = alias[req.ref]
+
+        def updateslot(_, attr):
+
+            updateref(req=attr, alias=alias)
+
+        _parseworef(req, updateslot)
 
     elif (
-            isinstance(request, Iterable)
-            and not isinstance(request, string_types)
+            isinstance(req, Iterable)
+            and not isinstance(req, string_types)
     ):
+        map(lambda item: updateref(req=item, alias=alias), req)
 
-        for item in request:
-            updaterequest(item, alias)
+
+def copy(req, schemas=None, systems=None):
+    """Make a copy of input request."""
+
+    result = req
+
+    if isinstance(req, Request):
+
+        if (
+            (schemas, systems == None, None)
+            or (schemas is not None and req.schema in schemas)
+            or (systems is not None and req.system in systems)
+        ):
+
+            kwargs = {}
+            cls = type(req)
+
+            def copyslots(slot, attr):
+
+                attr = copy(attr)
+                kwargs[slot] = attr
+
+            _parseworef(req, copyslots)
+
+            result = cls(**kwargs)
+
+    elif isinstance(req, Iterable) and not isinstance(req, string_types):
+        result = map(copy, req)
+
+    return result
+
+
+def _parseworef(req, func):
+
+    for slot in req.__slots__:
+        if slot != 'ref':
+            attr = getattr(req, slot)
+            func(slot, attr)

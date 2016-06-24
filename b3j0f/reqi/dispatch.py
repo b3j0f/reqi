@@ -26,9 +26,9 @@
 
 """Specification of the dispatcher interface."""
 
-from b3j0f.schema.prop import SchemaProperty
+from b3j0f.schema.property import SchemaProperty
 
-from .query import Query
+from .request.core import Request
 
 NAME_SEPARATOR = '/'
 
@@ -265,8 +265,9 @@ def _removeoccurences(l):
 
     if len(l) != len(set(l)):
         l.reverse()
+
         for item in list(l):
-            for _ in range(1, l.count(l)):
-                l.remove(l)
+            for _ in range(1, l.count(item)):
+                l.remove(item)
 
         l.reverse()

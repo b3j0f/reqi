@@ -26,6 +26,9 @@
 
 """Specification of the System interface."""
 
+from b3j0f.schema import getschema
+
+
 class System(object):
     """In charge of dispatching requests."""
 
@@ -36,7 +39,8 @@ class System(object):
     ):
         """
         :param str name: system name.
-        :param b3j0f.schema.Schema schema: system schema.
+        :param b3j0f.schema.Schema schema: system schema. Default is getschema
+            of this.
         :param list of System dependencies: list of system dependencies.
         :param list schemas: supported schemas.
         :param list dimensions: list of supported dimensions.
@@ -45,7 +49,7 @@ class System(object):
         super(System, self).__init__(*args, **kwargs)
 
         self.name = name
-        self.schema = schema
+        self.schema = schema or getschema(type(self))
         self.dependencies = dependencies or []
         self.schemas = schemas or []
         self.dimensions = dimensions or []

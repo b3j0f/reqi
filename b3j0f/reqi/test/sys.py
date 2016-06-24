@@ -1,9 +1,10 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,14 +25,40 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Specification of the dimension interface."""
+
+from unittest import main
+
+from b3j0f.utils.ut import UTCase
+from b3j0f.schema import getschema
+
+from ..sys import System
+from ..dim.base import Dimension
 
 
-class Dimension(object):
-    """In charge of handling system dimensions."""
+class TestSystem(System):
 
-    def __init__(self, name, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
 
-        super(Dimension, self).__init__(*args, **kwargs)
+        super(TestSystem, self).__init__(*args, **kwargs)
 
-        self.name = name
+        self.schemas = [
+            getschema(TestSystem, name='a'), getschema(TestSystem, name='b')
+        ]
+
+        self.dimensions = [Dimension('a'), Dimension('b')]
+
+
+class SystemTest(UTCase):
+
+    def test_constructor(self):
+
+        name = 'test'
+
+        system = TestSystem(name=name)
+
+        self.assertEqual(system.name, name)
+        self.assertEqual(system.schema, getschema(TestSystem))
+
+
+if __name__ == '__main__':
+    main()

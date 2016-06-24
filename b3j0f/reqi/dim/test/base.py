@@ -1,9 +1,10 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,32 +25,31 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Specification of the request object."""
+
+from unittest import main
+
+from b3j0f.utils.ut import UTCase
+
+from ..base import Dimension
 
 
-class Request(object):
-    """Default request object."""
+class DimensionTest(UTCase):
 
-    __slots__ = ['system', 'schema', 'alias', 'ref']
+    CLS = Dimension
+    NAME = None
 
-    def __init__(
-            self, system=None, schema=None, alias=None, ref=None,
-            *args, **kwargs
-    ):
-        """
-        :param str system: system name.
-        :param str schema: schema name.
-        :param str alias: alias name for the couple system/schema.
-        :param ref: alias reference. Alias name or reference to a request.
-        """
+    def setUp(self):
 
-        super(Request, self).__init__(*args, **kwargs)
+        type(self).NAME = getattr(type(self).CLS, 'NAME', 'dimension')
 
-        self.system = system
-        self.schema = schema
-        self.alias = alias
-        self.ref = ref
+    def test_constructor(self, *args, **kwargs):
 
-    def process(self, dispatcher):
+        if self.NAME == 'dimension':
+            kwargs['name'] = 'dimension'
 
-        raise NotImplementedError()
+        dimension = type(self).CLS(*args, **kwargs)
+
+        self.assertEqual(dimension.name, type(self).NAME)
+
+if __name__ == '__main__':
+    main()

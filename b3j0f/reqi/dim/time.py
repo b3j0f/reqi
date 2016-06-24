@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,32 +24,20 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Specification of the request object."""
+"""Specification of the time interface."""
 
 
-class Request(object):
-    """Default request object."""
+from .base import Dimension
 
-    __slots__ = ['system', 'schema', 'alias', 'ref']
+class Time(Dimension):
+    """In charge of handling system time."""
 
-    def __init__(
-            self, system=None, schema=None, alias=None, ref=None,
-            *args, **kwargs
-    ):
-        """
-        :param str system: system name.
-        :param str schema: schema name.
-        :param str alias: alias name for the couple system/schema.
-        :param ref: alias reference. Alias name or reference to a request.
-        """
+    NAME = 'TIME'
 
-        super(Request, self).__init__(*args, **kwargs)
+    __slots__ = ['rrule']
 
-        self.system = system
-        self.schema = schema
-        self.alias = alias
-        self.ref = ref
+    def __init__(self, rrule, *args, **kwargs):
 
-    def process(self, dispatcher):
+        super(Time, self).__init__(name=Time.NAME, *args, **kwargs)
 
-        raise NotImplementedError()
+        self.rrule = rrule

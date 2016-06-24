@@ -1,9 +1,10 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,32 +25,38 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Specification of the request object."""
+
+from unittest import main
+
+from b3j0f.utils.ut import UTCase
+from b3j0f.schema import getschema
+
+from ..dispatch import Dispatcher, _removeoccurences
 
 
-class Request(object):
-    """Default request object."""
+class RemoveOccurencesTest(UTCase):
 
-    __slots__ = ['system', 'schema', 'alias', 'ref']
+    def test_empty(self):
 
-    def __init__(
-            self, system=None, schema=None, alias=None, ref=None,
-            *args, **kwargs
-    ):
-        """
-        :param str system: system name.
-        :param str schema: schema name.
-        :param str alias: alias name for the couple system/schema.
-        :param ref: alias reference. Alias name or reference to a request.
-        """
+        l = []
 
-        super(Request, self).__init__(*args, **kwargs)
+        _removeoccurences(l)
 
-        self.system = system
-        self.schema = schema
-        self.alias = alias
-        self.ref = ref
+        self.assertFalse(l)
 
-    def process(self, dispatcher):
+    def test_full(self):
 
-        raise NotImplementedError()
+        l = [0, 1, 2, 1, 3, 0, 0, 2, 1]
+
+        _removeoccurences(l)
+
+        self.assertEqual(l, [0, 1, 2, 3])
+
+
+
+class DispatcherTest(UTCase):
+    pass
+
+
+if __name__ == '__main__':
+    main()
