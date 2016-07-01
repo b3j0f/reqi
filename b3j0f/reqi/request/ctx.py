@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,29 +24,14 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Specification of the class Read."""
+__all__ = ['Context']
 
-from .base import AliasedRequest
 
-from sys import maxsize
+class Context(object):
 
-class Read(AliasedRequest):
-    """Base Read object.
+    def __init__(self, models=None, requests=None, *args, **kwargs):
 
-    Equivalent to the SELECT part in SQL"""
+        super(Context, self).__init__(*args, **kwargs)
 
-    def __init__(self, limit=maxsize, offset=0, groupby=None, order=None, *args, **kwargs):
-        """
-        :param int limit: max number of elements to retrieve.
-        :param int offset: lower element position.
-        :param list groupby: array of read names.
-        :param list order: list of tuple of read resource with (de/a)scending
-            order.
-        """
-
-        super(Read, self).__init__(*args, **kwargs)
-
-        self.limit = limit
-        self.offset = offset
-        self.groupby = groupby
-        self.order = order
+        self.models = models or {}
+        self.requests = requests or {}

@@ -1,10 +1,9 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -25,36 +24,32 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-
-from unittest import main
-
-from b3j0f.utils.ut import UTCase
-
-from ..core import Request
+"""Specification of the node object."""
 
 
-class RequestTest(UTCase):
+class Node(object):
+    """Elementary part of request.
 
-    def test_constructor(self):
+    An elementary part is linked to a system and/or a schema.
+    For easying its use, it can be referee to an alias, and be refered by
+    another node using the attribute `ref`."""
 
-        scope = 'scope'
-        cond = 'cond'
-        read = 'read'
-        updates = 'updates'
-        ctx = 'ctx'
+    __slots__ = ['system', 'schema', 'alias', 'ref']
 
-        request = Request(
-            scope=scope, cond=cond, read=read, updates=updates, ctx=ctx
-        )
+    def __init__(
+            self, system=None, schema=None, alias=None, ref=None,
+            *args, **kwargs
+    ):
+        """
+        :param str system: system name.
+        :param str schema: schema name.
+        :param str alias: alias name for the couple system/schema.
+        :param ref: alias reference. Alias name or reference to a request.
+        """
 
-        self.assertEqual(request.scope, scope)
-        self.assertEqual(request.cond, cond)
-        self.assertEqual(request.read, read)
-        self.assertEqual(request.updates, updates)
+        super(Node, self).__init__(*args, **kwargs)
 
-    def test_where(self):
-
-        request = Request()
-
-if __name__ == '__main__':
-    main()
+        self.system = system
+        self.schema = schema
+        self.alias = alias
+        self.ref = ref

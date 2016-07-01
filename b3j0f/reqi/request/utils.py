@@ -26,20 +26,20 @@
 
 __all__ = ['getcontext', 'updateref', 'copy']
 
-"""Specification of the request object."""
+"""Node utilities."""
 
 from collections import Iterable
 
 from six import string_types
 
-from .core import Request
+from .base import Node
 
 
-def getcontext(req, systems=None, schemas=None):
-    """Get context from a request depending on nature of the request.
+def getcontext(node, systems=None, schemas=None):
+    """Get context from a node depending on nature of the node.
 
-    :param req: Handled types : Request and list of Request.
-    :return: request context.
+    :param node: Handled types : Node and list of Node.
+    :return: node context.
     :rtype: tuple."""
 
     if systems is None:
@@ -50,95 +50,108 @@ def getcontext(req, systems=None, schemas=None):
 
     result = systems, schemas
 
-    if isinstance(req, Request):
-        if req.system is not None:
-            result[0].append(req.system)
+    if isinstance(node, Node):
+        if node.system is not None:
+            result[0].append(node.system)
 
-        if req.schema is not None:
-            result[1].append(req.schema)
+        if node.schema is not None:
+            result[1].append(node.schema)
 
         def getcontextslot(_, attr):
 
             getcontext(attr, result[0], result[1])
 
-        _parseworef(req, getcontextslot)
+        _parseworef(node, getcontextslot)
 
     elif (
-            isinstance(req, Iterable)
-            and not isinstance(req, string_types)
+            isinstance(node, Iterable)
+            and not isinstance(node, string_types)
     ):
         map(
             lambda item: getcontext(item, systems=result[0], schemas=result[1]),
-            req
+            node
         )
 
     return result
 
 
-def updateref(req, alias=None):
-    """Update request references related to input alias.
+def updateref(node, alias=None):
+    """Update node references related to input alias.
 
-    :param Request: req to update with alias.
-    :param dict alias: set of (alias name, Request).
+    :param Node: node to update with alias.
+    :param dict alias: set of (alias name, Node).
     """
 
     if alias is None:
         alias = {}
 
-    if isinstance(req, Request):
-        if req.alias is not None:
-            alias[req.alias] = req
+    if isinstance(node, Node):
+        if node.alias is not None:
+            alias[node.alias] = node
 
-        if req.ref is not None:
-            req.ref = alias[req.ref]
+        if node.ref is not None:
+            node.ref = alias[node.ref]
+            node.system = node.ref.system
+            node.schema = node.ref.schema
 
         def updateslot(_, attr):
+            updateref(node=attr, alias=alias)
 
-            updateref(req=attr, alias=alias)
-
-        _parseworef(req, updateslot)
+        _parseworef(node, updateslot)
 
     elif (
-            isinstance(req, Iterable)
-            and not isinstance(req, string_types)
+            isinstance(node, Iterable)
+            and not isinstance(node, string_types)
     ):
-        map(lambda item: updateref(req=item, alias=alias), req)
+        map(lambda item: updateref(node=item, alias=alias), node)
 
 
-def copy(req, schemas=None, systems=None):
-    """Make a copy of input request."""
+def copy(node, systems=None, schemas=None):
+    """Make a copy of input node.
 
-    result = req
+    :param list systems: if given, copied nodes will be those who use the same
+        systems or None. By default, copy refers to all system nodes
+    :param list schemas: if given, copied nodes will be those who use the same
+        schemas or None. By default, copy refers to all schema nodes.
+    :return: copied node."""
 
-    if isinstance(req, Request):
+    result = node
+
+    if isinstance(node, Node):
 
         if (
             (schemas, systems == None, None)
-            or (schemas is not None and req.schema in schemas)
-            or (systems is not None and req.system in systems)
+            or (schemas is not None and node.schema in schemas)
+            or (systems is not None and node.system in systems)
         ):
 
             kwargs = {}
-            cls = type(req)
+            cls = type(node)
 
             def copyslots(slot, attr):
 
                 attr = copy(attr)
                 kwargs[slot] = attr
 
-            _parseworef(req, copyslots)
+            _parseworef(node, copyslots)
 
             result = cls(**kwargs)
 
-    elif isinstance(req, Iterable) and not isinstance(req, string_types):
-        result = map(copy, req)
+    elif isinstance(node, Iterable) and not isinstance(node, string_types):
+        result = map(copy, node)
 
     return result
 
 
-def _parseworef(req, func):
+def _parseworef(node, func):
+    """Apply input func on all input node attributes without the reference
+    attribute.
 
-    for slot in req.__slots__:
+    :param Node node: node from which apply func.
+    :param func: function which taks in parameter an attribute name and its
+        value."""
+
+    for slot in node.__slots__:
         if slot != 'ref':
-            attr = getattr(req, slot)
+            attr = getattr(node, slot)
             func(slot, attr)

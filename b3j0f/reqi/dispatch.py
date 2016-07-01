@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,9 +26,7 @@
 
 """Specification of the dispatcher interface."""
 
-from b3j0f.schema.property import SchemaProperty
-
-from .request.core import Request
+from b3j0f.utils.version import OrderedDict
 
 NAME_SEPARATOR = '/'
 
@@ -47,9 +45,37 @@ class Dispatcher(object):
 
         self._loadsystems()
 
+    def _loadsystems(self):
+        """Load this systems in referencing sys name by schema and reciprocally.
+        """
+
+        self._systemsperschema = OrderedDict()
+        self._schemaspersystem = OrderedDict()
+        self._systemsbyname = OrderedDict()
+        self._schemasbyname = OrderedDict()
+        self._schemasperprop = OrderedDict()
+
+        for system in self.systems:
+
+            sysn = system.name
+
+            self._systemsbyname[sysn] = system
+
+            for schema in system.schemas:
+
+                schn = schema.name
+
+                self._schemasbyname[schn] = schema
+                self._schemaspersystem.setdefault(sysn, []).append(schn)
+                self._systemsperschema.setdefault(schn, []).append(sysn)
+
+                for propn in schema:
+
+                    self._schemasperprop.setdefault(propn, []).append(schn)
+
     def getsystemswithschemas(
             self, system=None, schema=None, prop=None,
-            defaultsystems=None, defaultschemas=None
+            defsystems=None, defschemas=None
     ):
         """Get systems and schemas corresponding to input system, schema and
         prop if not given.
@@ -57,28 +83,30 @@ class Dispatcher(object):
         :param str system: system name.
         :param str schema: schema name.
         :param str prop: property name.
-        :param list defaultsystems: default system names.
-        :param list defaultschemas: default schema names.
+        :param list defsystems: default system names.
+        :param list defschemas: default schema names.
         :return: corresponding (systems, schemas)
         :rtype: tuple
         """
 
-        if defaultsystems is None:
-            if defaultschemas is None:
-                defaultsystems = list(self._schemasbysystem)
+        if defsystems is None:
+
+            if defschemas is None:
+                defsystems = list(self._schemaspersystem)
 
             else:
-                defaultsystems = [
+                defsystems = [
                     _system
-                    for _schema in defaultschemas
-                    for _system in self._systemsbyschema[_schema]
+                    for _schema in defschemas
+                    for _system in self._systemsperschema[_schema]
                 ]
 
-        if defaultschemas is None:
-            defaultschemas = [
+        if defschemas is None:
+
+            defschemas = [
                 _schema
-                for _system in defaultsystems
-                for _schema in self._schemasbysystem[_system]
+                for _system in defsystems
+                for _schema in self._schemaspersystem[_system]
             ]
 
         if system is not None:
@@ -88,151 +116,63 @@ class Dispatcher(object):
             schemas = [schema]
 
         if prop is None:
+
             if schema is None:
+
                 if system is None:
-                    systems = defaultsystems
-                    schemas = defaultschemas
+                    systems = defsystems
+                    schemas = defschemas
 
                 else:
                     schemas = [
-                        schema for schema in self._schemasbysystem[system]
-                        if schema in defaultschemas
+                        schema for schema in self._schemaspersystem[system]
+                        if schema in defschemas
                     ]
 
             else:
                 if system is None:
                     systems = [
-                        system for system in self._systemsbyschema[schema]
-                        if system in defaultsystems
+                        system for system in self._systemsperschema[schema]
+                        if system in defsystems
                     ]
 
         else:
+
             if schema is None:
+
                 if system is None:
                     schemas = [
                         schema
-                        for schema in self._schemasbyprop[prop]
-                        if schema in defaultschemas
+                        for schema in self._schemasperprop[prop]
+                        if schema in defschemas
                     ]
                     systems = [
                         system
                         for schema in schemas
-                        for system in self._systemsbyschema[schema]
-                        if system in defaultsystems
+                        for system in self._systemsperschema[schema]
+                        if system in defsystems
                     ]
 
                 else:
                     schemas = [
                         schema
-                        for schemas in self._schemasbyprop[prop]
-                        if schema in self._schemasbysystem[system]
-                        and schema in defaultschemas
+                        for schemas in self._schemasperprop[prop]
+                        if schema in self._schemaspersystem[system]
+                        and schema in defschemas
                     ]
 
             else:
+
                 if system is None:
                     systems = [
-                        system for system in self._systemsbyschema[schema]
-                        if system in defaultsystems
+                        system for system in self._systemsperschema[schema]
+                        if system in defsystems
                     ]
 
         _removeoccurences(systems)
         _removeoccurences(schemas)
 
         return systems, schemas
-
-    def getsysschpro(self, name):
-
-        parts = name.split(NAME_SEPARATOR)
-
-        len_parts = len(parts)
-
-        sys, sch, pro = None, None, None
-
-        if len_parts == 1:
-            pro = parts[0]
-
-        elif len_parts == 2:
-            sch, pro = tuple(parts)
-
-        elif len_parts == 3:
-            sys, sch, pro = tuple(parts)
-
-        if sch is None:
-            if pro not in self._schemasbyprop:
-                raise ValueError(pro)
-            self._schemasbyprop[pro]
-
-        return sys, sch, pro
-
-    def _loadsystems(self):
-        """Load self systems, schemas, properties and dimensions."""
-
-        self._dependenciesbysystem = {}
-        self._systemsbyschema = {}
-        self._schemasbysystem = {}
-        self._schemasbyprop = {}
-        self._dependenciesbyschema = {}
-        self._propsbyschema = {}
-        self._dimensionsbysystem = {}
-        self._systemsbydimension = {}
-
-        systems = list(self.systems)
-
-        i = 0
-
-        while i < len(systems):
-
-            system = systems[i]
-            i+= 1
-
-            sname = system.name
-
-            # add dependencies
-            dependencies = system.dependencies()
-
-            for dependency in dependencies:
-                if dependency not in systems:
-                    systems.append(dependency)
-
-            self._dependenciesbysystem[system] = dependencies
-
-            # add schemas
-            for schema in system.schemas():
-                suid = schema.uid
-                self._systemsbyschema.setdefault(suid, {})[sname] = system
-                self._schemasbysystem.setdefault(sname, {})[suid] = schema
-
-                # add properties
-                for pname in schema:
-                    prop = schema[prop]
-                    self._propsbyschema.setdefault(suid, {})[pname] = prop
-                    self._schemasbyprop.setdefault(pname, {})[suid] = schema
-
-                    if isinstance(prop, SchemaProperty):
-                        self._dependenciesbyschema.setdefault(
-                            suid, {}
-                        )[prop.name] = prop.schema
-
-            # add dimensions
-            for dimension in system.dimensions():
-                dname = dimension.name
-                self._dimensionsbysystem.setdefault(
-                    sname, {}
-                )[dname] = dimension
-                self._systemsbydimension.setdefault(dname, {})[sname] = system
-
-    def getdependencies(self, systems=None, schemas=None):
-
-        result = {}, {}
-
-        for system in systems:
-            result[0][system] = self._dependenciesbysystem[system]
-
-        for schema in schemas:
-            result[1][schema] = self._dependenciesbyschema[schema]
-
-        return result
 
     def run(
             self, scope=None, cond=None, read=None, create=None, update=None,

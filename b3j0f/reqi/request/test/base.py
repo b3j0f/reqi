@@ -30,31 +30,25 @@ from unittest import main
 
 from b3j0f.utils.ut import UTCase
 
-from ..core import Request
+from ..base import Node
 
 
-class RequestTest(UTCase):
+class NodeTest(UTCase):
 
     def test_constructor(self):
 
-        scope = 'scope'
-        cond = 'cond'
-        read = 'read'
-        updates = 'updates'
-        ctx = 'ctx'
+        system = 'system'
+        schema = 'schema'
+        alias = 'alias'
+        ref = 'ref'
 
-        request = Request(
-            scope=scope, cond=cond, read=read, updates=updates, ctx=ctx
-        )
+        node = Node(system=system, schema=schema, alias=alias, ref=ref)
 
-        self.assertEqual(request.scope, scope)
-        self.assertEqual(request.cond, cond)
-        self.assertEqual(request.read, read)
-        self.assertEqual(request.updates, updates)
+        self.assertEqual(node.system, system)
+        self.assertEqual(node.schema, schema)
+        self.assertEqual(node.alias, alias)
+        self.assertEqual(node.ref, ref)
 
-    def test_where(self):
-
-        request = Request()
 
 if __name__ == '__main__':
     main()

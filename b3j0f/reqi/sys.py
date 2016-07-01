@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -34,8 +34,7 @@ class System(object):
 
     def __init__(
     		self, name,
-            schema=None, dependencies=None, schemas=None, dimensions=None,
-            *args, **kwargs
+            schema=None, schemas=None, dimensions=None, *args, **kwargs
     ):
         """
         :param str name: system name.
@@ -50,6 +49,5 @@ class System(object):
 
         self.name = name
         self.schema = schema or getschema(type(self))
-        self.dependencies = dependencies or []
         self.schemas = schemas or []
         self.dimensions = dimensions or []

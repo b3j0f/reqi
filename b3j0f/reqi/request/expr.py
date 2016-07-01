@@ -26,7 +26,7 @@
 
 """Specification of the request object."""
 
-from .core import Request
+from .node import Node
 
 from numbers import Number
 
@@ -93,182 +93,289 @@ OCT = 'oct'
 HEX = 'hex'
 
 
-class Expression(Request):
+class Expression(Node):
     """Expression request object."""
 
-    __slots__ = ['prop']
+    __slots__ = ['prop', 'offset', 'limit', 'groupby', 'sort']
 
-    def __init__(self, prop, *args, **kwargs):
+    def __init__(
+            self, prop, offset=None, limit=None, groupby=None, sort=None,
+            *args, **kwargs
+    ):
         """
         :param str prop: property name.
+        :param int offset: minimal offset to get. 0 by default.
+        :param int limit: maximal number of elements to get. Infinite by default.
+        :param list groupby: list of property names to group by.
+        :param list sort: list of property name by (de/a)scendant order to sort.
         """
 
         super(Expression, self).__init__(*args, **kwargs)
 
         self.prop = prop
+        self.offset = offset
+        self.limit = limit
+        self.groupby = groupby
+        self.sort = sort
 
     # boolean functions
     def __and__(self, value):
-        return FuncRequest(prop=AND, params=[self, value])
+        return Func(prop=AND, params=[self, value])
 
     def __rand__(self, value):
-        return FuncRequest(prop=AND, params=[value, self])
+        return Func(prop=AND, params=[value, self])
 
     def __or__(self, value):
-        return FuncRequest(prop=OR, params=[self, value])
+        return Func(prop=OR, params=[self, value])
 
     def __ror__(self, value):
-        return FuncRequest(prop=OR, params=[value, self])
+        return Func(prop=OR, params=[value, self])
 
     def __xor__(self, value):
-        return FuncRequest(prop=XOR, params=[self, value])
+        return Func(prop=XOR, params=[self, value])
 
     def __rxor__(self, value):
-        return FuncRequest(prop=XOR, params=[value, self])
+        return Func(prop=XOR, params=[value, self])
 
     def __invert__(self):
-        return FuncRequest(prop=NOT, params=[self])
+        return Func(prop=NOT, params=[self])
 
     # array functions
     def __len__(self):
-        return FuncRequest(prop=COUNT, params=[self])
+        return Func(prop=COUNT, params=[self])
 
     def __contains__(self, item):
-        return FuncRequest(prop=IN, params=[item, self])
+        return Func(prop=IN, params=[item, self])
 
     def __reversed__(self):
-        return FuncRequest(prop=REVERSE, params=[self])
+        return Func(prop=REVERSE, params=[self])
 
     def __getitem__(self, key):
-        return FuncRequest(prop=GETITEM, params=[self, key])
+        return Func(prop=GETITEM, params=[self, key])
 
     def __setitem__(self, key, item):
-        return FuncRequest(prop=SETITEM, params=[self, key, item])
+        return Func(prop=SETITEM, params=[self, key, item])
 
     def __delitem__(self, key):
-        return FuncRequest(prop=DELITEM, params=[self, key])
+        return Func(prop=DELITEM, params=[self, key])
 
     def __getslice__(self, i, j):
-        return FuncRequest(prop=GETSLICE, params=[self, i, j])
+        return Func(prop=GETSLICE, params=[self, i, j])
 
     def __setslice__(self, i, j, seq):
-        return FuncRequest(prop=SETSLICE, params=[self, i, j, seq])
+        return Func(prop=SETSLICE, params=[self, i, j, seq])
 
     def __delslice__(self, i, j):
-        return FuncRequest(prop=DELSLICE, params=[self, i, j])
+        return Func(prop=DELSLICE, params=[self, i, j])
 
     # numeric functions
     def __add__(self, value):
-        return FuncRequest(prop=ADD, params=[self, value])
+        return Func(prop=ADD, params=[self, value])
 
     def __radd__(self, value):
-        return FuncRequest(prop=ADD, params=[value, self])
+        return Func(prop=ADD, params=[value, self])
 
     def __sub__(self, value):
-        return FuncRequest(prop=SUB, params=[self, value])
+        return Func(prop=SUB, params=[self, value])
 
     def __rsub__(self, value):
-        return FuncRequest(prop=SUB, params=[value, self])
+        return Func(prop=SUB, params=[value, self])
 
     def __mul__(self, value):
-        return FuncRequest(prop=MUL, params=[self, value])
+        return Func(prop=MUL, params=[self, value])
 
     def __rmul__(self, value):
-        return FuncRequest(prop=MUL, params=[value, self])
+        return Func(prop=MUL, params=[value, self])
 
     def __div__(self, value):
-        return FuncRequest(prop=DIV, params=[self, value])
+        return Func(prop=DIV, params=[self, value])
 
     def __rdiv__(self, value):
-        return FuncRequest(prop=DIV, params=[value, self])
+        return Func(prop=DIV, params=[value, self])
 
     def __mod__(self, value):
-        return FuncRequest(
+        return Func(
             prop=MOD if isinstance(value, Number) else LIKE,
             params=[self, value]
         )
 
     def __rmod__(self, value):
-        return FuncRequest(
+        return Func(
             prop=MOD if isinstance(value, Number) else LIKE,
             params=[value, self]
         )
 
     def __pow__(self, value):
-        return FuncRequest(prop=POW, params=[self, value])
+        return Func(prop=POW, params=[self, value])
 
     def __rpow__(self, value):
-        return FuncRequest(prop=POW, params=[value, self])
+        return Func(prop=POW, params=[value, self])
 
     def __lshift__(self, value):
-        return FuncRequest(prop=LSHIFT, params=[self, value])
+        return Func(prop=LSHIFT, params=[self, value])
 
     def __rlshift__(self, value):
-        return FuncRequest(prop=LSHIFT, params=[value, self])
+        return Func(prop=LSHIFT, params=[value, self])
 
     def __rshift__(self, value):
-        return FuncRequest(prop=RSHIFT, params=[self, value])
+        return Func(prop=RSHIFT, params=[self, value])
 
     def __rrshift__(self, value):
-        return FuncRequest(prop=RSHIFT, params=[value, self])
+        return Func(prop=RSHIFT, params=[value, self])
 
     def __lt__(self, value):
-        return FuncRequest(prop=LT, params=[self, value])
+        return Func(prop=LT, params=[self, value])
 
     def __le__(self, value):
-        return FuncRequest(prop=LTE, params=[self, value])
+        return Func(prop=LTE, params=[self, value])
 
     def __eq__(self, value):
-        return FuncRequest(prop=EQ, params=[self, value])
+        return Func(prop=EQ, params=[self, value])
 
     def __ne__(self, value):
-        return FuncRequest(prop=NEQ, params=[self, value])
+        return Func(prop=NEQ, params=[self, value])
 
     def __gt__(self, value):
-        return FuncRequest(prop=GT, params=[self, value])
+        return Func(prop=GT, params=[self, value])
 
     def __ge__(self, value):
-        return FuncRequest(prop=GTE, params=[self, value])
+        return Func(prop=GTE, params=[self, value])
 
     def __nonzero__(self):
-        return FuncRequest(prop=AND, params=[self, True])
+        return Func(prop=AND, params=[self, True])
 
     def __oct__(self):
-        return FuncRequest(prop=OCT, params=[self])
+        return Func(prop=OCT, params=[self])
 
     def __hex__(self):
-        return FuncRequest(prop=HEX, params=[self])
+        return Func(prop=HEX, params=[self])
 
     def __int__(self):
-        return FuncRequest(prop=INT, params=[self])
+        return Func(prop=INT, params=[self])
 
     def __float__(self):
-        return FuncRequest(prop=FLOAT, params=[self])
+        return Func(prop=FLOAT, params=[self])
 
     def __neg__(self):
-        return FuncRequest(prop=NEG, params=[self])
+        return Func(prop=NEG, params=[self])
 
     def __pos__(self):
-        return FuncRequest(prop=POS, params=[self])
+        return Func(prop=POS, params=[self])
 
     def __abs__(self):
-        return FuncRequest(prop=ABS, params=[self])
+        return Func(prop=ABS, params=[self])
 
 
-class FuncRequest(Expression):
+class Property(Expression):
+    """Expression dedicated to design a property."""
+
+
+class Func(Expression):
     """Func request object.
 
     The function name is the expression property name."""
 
-    __slots__ = ['params', 'rtype']
+    __slots__ = ['params', 'rtype', 'ctx']
 
-    def __init__(self, params=None, rtype=None, *args, **kwargs):
+    def __init__(self, params=None, rtype=None, ctx=None, *args, **kwargs):
         """
         :param list params: list of values.
         :param type rtype: return type.
+        :param dict ctx: context which will contain all expression result after
+            this running. expression results are registered by model names.
         """
 
-        super(FuncRequest, self).__init__(*args, **kwargs)
+        super(Func, self).__init__(*args, **kwargs)
 
         self.params = [] if params is None else params
         self.rtype = rtype
+
+    def run(self, dispatcher, ctx=None):
+
+        if ctx is None:
+            ctx = {}
+
+        self.ctx = ctx
+
+        self._run(dispatcher=dispatcher, ctx=ctx)
+
+    def _run(self, dispatcher, ctx):
+
+        systems, _ = getcontext(self)
+
+        if len(systems) == 1:
+            system = dispatcher.getsystem(systems[0])
+            system.run(self, ctx)
+
+        else:
+            for param in self.params:
+
+                if isinstance(param, Expression):
+
+                    if isinstance(param, Property):
+
+                        system = param.system
+
+                        system = dispatcher.getsystem(param.system)
+
+                        system.run(self, ctx=ctx)
+
+                    else:
+                        val = param.run(dispatcher=dispatcher, ctx=ctx)
+
+                else:
+                    val = param
+
+
+class And(Func):
+    """Func dedicated to process conjonction of expressions."""
+
+    def __init__(self, *args, **kwargs):
+
+        super(And, self).__init__(prop=AND, *args, **kwargs)
+
+    def _run(self, dispatcher, ctx):
+
+        params = list(self.params)
+
+        while params:
+            param = params.pop(params)
+
+            if isinstance(param, Func):
+
+                if isinstance(param, And):
+                    params = params[0:1] + param.params + params[1:]
+
+                param.run(dispatcher=dispatcher, ctx=ctx)
+
+
+class Or(Func):
+    """"""
+
+    __slots__ = ['ctxs']
+
+    def __init__(self, *args, **kwargs):
+
+        super(Or, self).__init__(prop=OR, *args, **kwargs)
+
+    def _run(self, dispatcher, ctx=None):
+
+        params = list(self.params)
+
+        while params:
+            param = params.pop(params)
+
+            if isinstance(param, Func):
+
+                if isinstance(param, Or):
+                    params = params[0:1] + param.params + params[1:]
+
+                pctx = ctx.copy()
+                param.run(dispatcher=dispatcher, ctx=pctx)
+
+            for mname in pctx:
+                if mname in self.ctx:
+                    self.ctx[mname] += pctx[mname]
+
+                else:
+                    self.ctx[mname] = pctx[mname]

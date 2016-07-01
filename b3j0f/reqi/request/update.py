@@ -28,10 +28,10 @@
 
 Equivalent to the UPDATE statement in SQL."""
 
-from .core import Request
+from .base import Node
 
 
-class Update(Request):
+class Update(Node):
     """In charge of refering model properties to create/update.
 
     Properties are:
@@ -55,3 +55,20 @@ class Update(Request):
 
         self.pset = pset or {}
         self.punset = punset or {}
+
+    @property
+    def create(self):
+        """True if this update is for creation."""
+
+        return self.ref is None and self.punset is None
+
+    @property
+    def delete(self):
+        """True if this update is for deletion."""
+        return self.punset is True
+
+    @property
+    def update(self):
+        """True if this update is for updating."""
+
+        return self.ref is not None and (self.pset or (self.punset is not True))

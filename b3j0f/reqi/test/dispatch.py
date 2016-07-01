@@ -29,9 +29,11 @@
 from unittest import main
 
 from b3j0f.utils.ut import UTCase
-from b3j0f.schema import getschema
+from b3j0f.schema import Schema, Property
+from b3j0f.schema.prop import SchemaProperty
 
 from ..dispatch import Dispatcher, _removeoccurences
+from ..sys import System
 
 
 class RemoveOccurencesTest(UTCase):
@@ -55,7 +57,159 @@ class RemoveOccurencesTest(UTCase):
 
 
 class DispatcherTest(UTCase):
-    pass
+
+    def setUp(self):
+
+        self.systems = []
+
+        self.allschemas = []
+
+        self.count = 5
+
+        for i in range(self.count):
+
+            syskwargs = {'name': '{0}'.format(i)}
+
+            schemas = []
+
+            syskwargs['schemas'] = schemas
+
+            self.allschemas.append(schemas)
+
+            for j in range(self.count):
+
+                schemakwargs = {'name': '{0}'.format(j)}
+
+                properties = [
+                    SchemaProperty(
+                        name='{0}'.format(k), schema=schemas[k]
+                    ) for k in range(j)
+                ]
+                properties.append(Property('id'))
+                schemakwargs['properties'] = properties
+                schemakwargs['ids'] = ['id']
+                schema = Schema('', **schemakwargs)
+                schemas.append(schema)
+
+                if j > 0:
+                    schema[str(j - 1)] = schemas[j - 1]
+
+            system = System(**syskwargs)
+
+            self.systems.append(system)
+
+        self.dispatcher = Dispatcher(systems=self.systems)
+
+
+class DispatcherConstructor(DispatcherTest):
+
+    def test_systemsperschema(self):
+
+        _systemsperschema = self.dispatcher._systemsperschema
+
+        for schn in _systemsperschema:
+
+            systems = _systemsperschema[schn]
+
+            self.assertEqual(systems, [str(i) for i in range(self.count)])
+
+    def test_schemaspersystem(self):
+
+        _schemaspersystem = self.dispatcher._schemaspersystem
+
+        for sysn in _schemaspersystem:
+
+            schemas = _schemaspersystem[sysn]
+
+            self.assertEqual(schemas, [str(i) for i in range(self.count)])
+
+    def test_schemasperprop(self):
+
+        _schemasperprop = self.dispatcher._schemasperprop
+
+        for propn in _schemasperprop:
+
+            schemas = _schemasperprop[propn]
+
+            if propn == 'id':
+                count = 5
+
+            else:
+                count = self.count - int(propn) - 1
+
+            self.assertEqual(count, len(schemas) / 5)
+
+
+class GetSystemsWithSchemasTest(DispatcherTest):
+
+    def test_default(self):
+
+        systems, schemas = self.dispatcher.getsystemswithschemas()
+
+        self.assertEqual(systems, [str(i) for i in range(self.count)])
+
+        self.assertEqual(schemas, [str(i) for i in range(self.count)])
+
+    def test_defaultsystems(self):
+
+        systems, schemas = self.dispatcher.getsystemswithschemas(
+            defsystems=['2', '3']
+        )
+
+        self.assertEqual(systems, ['2', '3'])
+
+        self.assertEqual(schemas, [str(i) for i in range(self.count)])
+
+    def test_defaultschemas(self):
+
+        systems, schemas = self.dispatcher.getsystemswithschemas(
+            defschemas=['2', '3']
+        )
+
+        self.assertEqual(systems, [str(i) for i in range(self.count)])
+
+        self.assertEqual(schemas, ['2', '3'])
+
+
+    def test_defaultsystemsandschemas(self):
+
+        systems, schemas = self.dispatcher.getsystemswithschemas(
+            defsystems=['2', '3'], defschemas=['2', '3']
+        )
+
+        self.assertEqual(systems, ['2', '3'])
+
+        self.assertEqual(schemas, ['2', '3'])
+
+    def test_system(self):
+
+        systems, schemas = self.dispatcher.getsystemswithschemas(
+            system='2'
+        )
+
+        self.assertEqual(systems, ['2'])
+
+        self.assertEqual(schemas, [str(i) for i in range(self.count)])
+
+    def test_schema(self):
+
+        systems, schemas = self.dispatcher.getsystemswithschemas(
+            schema='2'
+        )
+
+        self.assertEqual(systems, [str(i) for i in range(self.count)])
+
+        self.assertEqual(schemas, ['2'])
+
+    def test_systemandschema(self):
+
+        systems, schemas = self.dispatcher.getsystemswithschemas(
+            system='1', schema='2'
+        )
+
+        self.assertEqual(systems, ['1'])
+
+        self.assertEqual(schemas, ['2'])
 
 
 if __name__ == '__main__':
