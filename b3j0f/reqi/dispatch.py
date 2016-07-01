@@ -43,17 +43,23 @@ class Dispatcher(object):
 
         self.systems = systems
 
+        self._systemsperschema = OrderedDict()
+        self._schemaspersystem = OrderedDict()
+        self._systemsbyname = OrderedDict()
+        self._schemasbyname = OrderedDict()
+        self._schemasperprop = OrderedDict()
+
         self._loadsystems()
 
     def _loadsystems(self):
         """Load this systems in referencing sys name by schema and reciprocally.
         """
 
-        self._systemsperschema = OrderedDict()
-        self._schemaspersystem = OrderedDict()
-        self._systemsbyname = OrderedDict()
-        self._schemasbyname = OrderedDict()
-        self._schemasperprop = OrderedDict()
+        self._systemsperschema.clear()
+        self._schemaspersystem.clear()
+        self._systemsbyname.clear()
+        self._schemasbyname.clear()
+        self._schemasperprop.clear()
 
         for system in self.systems:
 
