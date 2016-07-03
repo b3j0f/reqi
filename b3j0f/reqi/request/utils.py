@@ -24,9 +24,9 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-__all__ = ['getcontext', 'updateref', 'copy']
-
 """Node utilities."""
+
+__all__ = ['getcontext', 'updateref', 'copy']
 
 from collections import Iterable
 
@@ -58,6 +58,7 @@ def getcontext(node, systems=None, schemas=None):
             result[1].append(node.schema)
 
         def getcontextslot(_, attr):
+            """Get context from slot attributes."""
 
             getcontext(attr, result[0], result[1])
 
@@ -120,9 +121,9 @@ def copy(node, systems=None, schemas=None):
     if isinstance(node, Node):
 
         if (
-            (schemas, systems == None, None)
-            or (schemas is not None and node.schema in schemas)
-            or (systems is not None and node.system in systems)
+                (schemas, systems == None, None)
+                or (schemas is not None and node.schema in schemas)
+                or (systems is not None and node.system in systems)
         ):
 
             kwargs = {}

@@ -187,7 +187,7 @@ class Dispatcher(object):
         """Run input query.
 
         :param list scope: list of Nodes.
-        :param list cond: list of Cconditions.
+        :param list cond: list of Conditions.
         :param list read: list of Expressions.
         :param list create: list of Assignment.
         :param list update: list of Assignment.

@@ -26,19 +26,45 @@
 
 """Specification of the request object."""
 
-from .node import Node
+from .base import Node
 
 from numbers import Number
+
+from time import time
+
+from re import match
+
+def updatecond(ctx, schema, cond):
+    if schema in ctx:
+        ctx[schema] = [item for item in ctx[schema] if cond(item)]
+        return True
+
+    else:
+        return False
+
+def updateitem(ctx, schema, update):
+    if schema in ctx:
+        ctx[schema] = [update(item) for item in ctx[schema]]
+        return True
+
+    else:
+        return False
+
 
 # list of default function names (prop is None).
 # existing property
 EXISTS = 'exists'
 
-# delete elements
-DELETE = 'delete'
+class Exists(Func):
+    def _run(self):
+        updatecond(self.ctx, self.schema, lambda item: self.prop in item)
 
 # regex functions
 LIKE = 'like'
+
+class Like(Func):
+    def _run(self):
+        updatecond(self.ctx, self.schema, lambda item: match(item))
 
 # boolean functions
 AND = '&&'
@@ -54,16 +80,56 @@ BXOR = '^'
 # time functions
 NOW = 'now'
 
+class Now(Func):
+    def _run(self):
+        self.ctx['NOW'] = time()
+
 # array functions
 COUNT = 'count'
+
+class Count(Func):
+    def _run(self):
+        self.ctx['COUNT({0})'.format(self.schema)] = len(self.ctx[self.schema])
+
 IN = 'in'
+
+class In(Func):
+    def _run(self):
+        updatecond(self.ctx, self.schema, lambda item: item[self.prop] in self.params[0])
+
 REVERSE = 'reverse'
+
+class Reverse(Func):
+    def _run(self):
+        self.ctx[self.schema] = reversed(self.ctx[self.schema])
+
 GETITEM = 'getitem'
+
 SETITEM = 'setitem'
+
+class SetItem(Func):
+    def _run(self):
+        updateitem(self.ctx, self.schema, lambda item: item.__setitem__(self.params[0], self.params[1]))
+
 DELITEM = 'delitem'
+
+class DelItem(Func):
+    def _run(self):
+        updateitem(self.ctx, self.schema, lambda item: item.__delitem__(self.params[0]))
+
 GETSLICE = 'getslice'
+
 SETSLICE = 'setslice'
+
+class SetSlice(Func):
+    def _run(self):
+        updateitem(self.ctx, self.schema, lambda item: item.__setslice__(self.params[0], self.params[1], self.params[2]))
+
 DELSLICE = 'delslice'
+
+class DelSlice(Func):
+    def _run(self):
+        updateitem(self.ctx, self.schema, lambda item: item.__delslice__[self.params[0], self.params[1]])
 
 # numerical functions
 ADD = '+'
@@ -282,7 +348,7 @@ class Func(Expression):
         :param list params: list of values.
         :param type rtype: return type.
         :param dict ctx: context which will contain all expression result after
-            this running. expression results are registered by model names.
+            this running. expression results are registered by schema names.
         """
 
         super(Func, self).__init__(*args, **kwargs)

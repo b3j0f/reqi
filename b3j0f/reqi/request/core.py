@@ -118,8 +118,8 @@ class Request(Node):
         return self
 
     def run(
-                self, dispatcher=None, scope=None, cond=None, updates=None,
-                read=None, ctx=None
+            self, dispatcher=None, scope=None, cond=None, updates=None,
+            read=None, ctx=None
         ):
         """Run input requests.
 
