@@ -180,24 +180,39 @@ class Dispatcher(object):
 
         return systems, schemas
 
-    def run(
-            self, scope=None, cond=None, read=None, create=None, update=None,
-            delete=None
-    ):
-        """Run input query.
+    def run(self, requests, scopes=None):
+        """Run context related to input scope, requests and projection.
 
-        :param list scope: list of Nodes.
-        :param list cond: list of Conditions.
-        :param list read: list of Expressions.
-        :param list create: list of Assignment.
-        :param list update: list of Assignment.
-        :param list delete: list of Conditions."""
+        :param list scopes: default system and schema to use in requests.
+        :param list requests: list of requests to process.
 
-        query = Query(self, scope=scope, cond=cond, read=read, create=create,
-            update=update, delete=delete
-        )
+        :rtype: list
+        :return: contexts of requests in the same order than input requests."""
 
-        result = query.execute()
+        # default systems and schemas
+
+        result = []
+
+        systems, schemas = [], []
+
+        if scopes is not None:
+            systems, schemas = set(), set()
+            for sco in scopes:
+                scosys, scosch = sco.getsysnsch()
+
+                systems |= set(scosys)
+                schemas |= set(scosch)
+
+            systems = list(systems)
+            schemas = list(schemas)
+
+        else:
+            systems = list(self._systemsbyname)
+            schemas = list(self._schemasbyname)
+
+        for request in requests:
+            reqctx = request.run(self, systems=systems, schemas=schemas)
+            result.append(reqctx)
 
         return result
 

@@ -34,10 +34,10 @@ class Node(object):
     For easying its use, it can be referee to an alias, and be refered by
     another node using the attribute `ref`."""
 
-    __slots__ = ['system', 'schema', 'alias', 'ref']
+    __slots__ = ['system', 'schema', 'alias', 'ref', 'ctx']
 
     def __init__(
-            self, system=None, schema=None, alias=None, ref=None,
+            self, system=None, schema=None, alias=None, ref=None, ctx=None,
             *args, **kwargs
     ):
         """
@@ -45,6 +45,7 @@ class Node(object):
         :param str schema: schema name.
         :param str alias: alias name for the couple system/schema.
         :param ref: alias reference. Alias name or reference to a request.
+        :param dict ctx: node execution context.
         """
 
         super(Node, self).__init__(*args, **kwargs)
@@ -53,3 +54,63 @@ class Node(object):
         self.schema = schema
         self.alias = alias
         self.ref = ref
+        self.ctx = ctx
+
+    def getctxname(self):
+        """Get node context name.
+
+        :rtype: str
+        """
+
+        if self.alias:
+            result = self.alias
+
+        elif self.ref is None:
+            result = '{0}{1}'.format(self.system or '', self.schema or '')
+
+        else:
+            result = self.ref.getctxname()
+
+        return result
+
+    def getsystems(self):
+        """Get all systems used by this node.
+
+        :rtype: set
+        """
+
+        if self.ref is None:
+            result = set([self.system])
+
+        else:
+            result = self.ref.getsystems()
+
+        return result
+
+    def run(self, dispatcher, ctx=None):
+        """Run this node."""
+
+        if ctx is None:
+            ctx = {}
+
+        systems = self.getsystems()
+
+        sname = None
+
+        if len(systems) == 1:
+            for sname in systems:
+                break
+
+        else:
+            sname = self.system
+            self._run(dispatcher=dispatcher, ctx=ctx)
+
+        if sname is not None:
+            system = dispatcher.getsystem(sname)
+            system.run(ctx=ctx)
+
+        self.ctx = ctx
+
+    def _run(self, dispatcher, ctx):
+
+        raise NotImplementedError()

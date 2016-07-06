@@ -156,3 +156,23 @@ def _parseworef(node, func):
         if slot != 'ref':
             attr = getattr(node, slot)
             func(slot, attr)
+
+def updatecond(ctx, schema, cond):
+
+    result = False
+
+    if schema in ctx:
+        ctx[schema] = [item for item in ctx[schema] if cond(item)]
+        result = True
+
+    return result
+
+def updateitems(ctx, node, update):
+
+    result = False
+
+    if node.schema in ctx:
+        ctx[node.schema] = map(update, ctx[node.schema])
+        result = True
+
+    return result

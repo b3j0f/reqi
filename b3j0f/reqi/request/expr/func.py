@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,14 +24,39 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-__all__ = ['Context']
+"""Specification of the request object."""
+
+from ..base import Node
+from .base import Expression
 
 
-class Context(object):
+class Function(Expression):
+    """Function request object.
 
-    def __init__(self, models=None, requests=None, *args, **kwargs):
+    The function name is the expression property name."""
 
-        super(Context, self).__init__(*args, **kwargs)
+    __slots__ = ['params', 'rtype']
 
-        self.models = models or {}
-        self.requests = requests or {}
+    def __init__(
+            self, params=None, rtype=None, prop=None, *args, **kwargs
+    ):
+        """
+        :param list params: list of values.
+        :param type rtype: return type.
+        :param dict ctx: context which will contain all expression result after
+            this running. expression results are registered by schema names.
+        """
+
+        super(Function, self).__init__(*args, **kwargs)
+
+        self.params = [] if params is None else params
+        self.rtype = rtype
+        self.prop = prop or type(self).PROP or type(self).__name__
+
+    def _run(self, dispatcher, ctx):
+
+        for param in self.params:
+
+            if isinstance(param, Node):
+
+                param.run(dispatcher=dispatcher, ctx=ctx)

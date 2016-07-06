@@ -30,6 +30,8 @@ Equivalent to the UPDATE statement in SQL."""
 
 from .base import Node
 
+from sys import maxsize
+
 
 class Update(Node):
     """In charge of refering model properties to create/update.
@@ -41,7 +43,7 @@ class Update(Node):
     - ref: referes to a filter for update elements. If None, this is just an
         element creation (and punset is useless)."""
 
-    __slots__ = ['pset', 'punset', 'ref']
+    __slots__ = ['pset', 'punset']
 
     def __init__(self, pset=None, punset=None, *args, **kwargs):
         """
@@ -72,3 +74,48 @@ class Update(Node):
         """True if this update is for updating."""
 
         return self.ref is not None and (self.pset or (self.punset is not True))
+
+    def _run(self):
+
+        def updateitem(item):
+            if self.pset:
+                for prop in self.pset:
+                    val = self.pset[prop]
+                    if isinstance(val, Slice):
+                        if val.values is None:
+                            del item[prop][val.lower: val.upper]
+
+                        else:
+                            item[prop][val.lower:val.upper] = val.values
+
+                    else:
+                        item[prop] = val
+
+            if self.punset:
+                for prop in self.punset:
+                    if prop in item:
+                        del item[prop]
+
+        updateitems(self.ctx, self.schema, updateitem)
+
+
+class Slice(object):
+    """Object dedicated to handle sliced data.
+
+    A slice is an set of data bound by a lower and upper integer values."""
+
+    __slots__ = ['lower', 'upper', 'values']
+
+    def __init__(self, lower=0, upper=maxsize, values=None, *args, **kwargs):
+        """
+        :param int lower: lower bound.
+        :param int upper: upper bound.
+        :param list values: values to set to the slice. If None, the slice is
+            for deletion.
+        """
+
+        super(Slice, self).__init__(*args, **kwargs)
+
+        self.lower = lower
+        self.upper = upper
+        self.values = values
