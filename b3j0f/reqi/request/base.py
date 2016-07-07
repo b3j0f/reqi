@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -66,7 +66,16 @@ class Node(object):
             result = self.alias
 
         elif self.ref is None:
-            result = '{0}{1}'.format(self.system or '', self.schema or '')
+            if self.system:
+                result = self.system
+                if self.schema:
+                    result = ''.join(result, '.', self.schema)
+
+            elif self.schema:
+                result = self.schema
+
+            else:
+                result = ''
 
         else:
             result = self.ref.getctxname()
@@ -114,3 +123,11 @@ class Node(object):
     def _run(self, dispatcher, ctx):
 
         raise NotImplementedError()
+
+    def __str__(self):
+
+        return self.getctxname()
+
+    def __repr__(self):
+
+        return self.getctxname()

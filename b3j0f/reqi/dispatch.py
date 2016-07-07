@@ -28,6 +28,8 @@
 
 from b3j0f.utils.version import OrderedDict
 
+from .request.core import Request
+
 NAME_SEPARATOR = '/'
 
 
@@ -215,7 +217,6 @@ class Dispatcher(object):
             result.append(reqctx)
 
         return result
-
 
 def _removeoccurences(l):
     """Ensure to have one item value in removing multi-occurences from the end

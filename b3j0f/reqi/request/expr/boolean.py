@@ -28,16 +28,12 @@
 
 __all__ = ['Bool']
 
-from .utils import updateitem
-from .base import Expression
+from .func import PropertyFunction
 
 
-class Bool(Expression):
+class Bool(PropertyFunction):
     """Convert a data to a boolean value."""
 
-    def _run(self):
+    def _convert(self, item):
 
-        updateitem(
-                self.ctx, self.params[0],
-                lambda item: bool(item[self.params[0].prop])
-        )
+    	return bool(item[self.params[0].prop])

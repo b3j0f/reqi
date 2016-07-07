@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -157,12 +157,14 @@ def _parseworef(node, func):
             attr = getattr(node, slot)
             func(slot, attr)
 
-def updatecond(ctx, schema, cond):
+def updatecond(ctx, node, cond):
 
     result = False
 
-    if schema in ctx:
-        ctx[schema] = [item for item in ctx[schema] if cond(item)]
+    if node.schema in ctx:
+        ctx[node.schema] = [
+            item for item in ctx[node.schema] if cond(item, node, ctx)
+        ]
         result = True
 
     return result
@@ -172,7 +174,9 @@ def updateitems(ctx, node, update):
     result = False
 
     if node.schema in ctx:
-        ctx[node.schema] = map(update, ctx[node.schema])
+        ctx[node.schema] = [
+            update(item, node, ctx) for item in ctx[node.schema]
+        ]
         result = True
 
     return result

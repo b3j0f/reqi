@@ -32,12 +32,10 @@ from .base import Dimension
 class Relation(Dimension):
     """In charge of handling system relation."""
 
-    NAME = 'RELATION'
-
     __slots__ = ['path']
 
     def __init__(self, path, *args, **kwargs):
 
-        super(Relation, self).__init__(name=Relation.NAME, *args, **kwargs)
+        super(Relation, self).__init__(*args, **kwargs)
 
         self.path = path

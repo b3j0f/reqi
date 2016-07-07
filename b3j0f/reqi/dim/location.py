@@ -32,13 +32,11 @@ from .base import Dimension
 class Location(Dimension):
     """In charge of handling system location."""
 
-    NAME = 'LOCATION'
-
     __slots__ = ['coord', 'radius']
 
     def __init__(self, coord=None, radius=None, *args, **kwargs):
 
-        super(Location, self).__init__(name=Location.NAME, *args, **kwargs)
+        super(Location, self).__init__(*args, **kwargs)
 
         self.coord = coord
         self.radius = radius

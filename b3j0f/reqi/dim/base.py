@@ -26,14 +26,8 @@
 
 """Specification of the dimension interface."""
 
+from ..request.expr.func import Function
 
-class Dimension(object):
+
+class Dimension(Function):
     """In charge of handling system dimensions."""
-
-    __slots__ = ['name']
-
-    def __init__(self, name, *args, **kwargs):
-
-        super(Dimension, self).__init__(*args, **kwargs)
-
-        self.name = name

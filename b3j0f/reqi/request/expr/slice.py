@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,11 +26,13 @@
 
 """Specification of the request object."""
 
+__all__ = ['SetSlice', 'GetSlice', 'DelSlice']
+
+
 from .base import Expression
 from .func import Function
-from .utils import updateitem
+from ..utils import updateitems
 
-from ..slice import Slice
 from ..update import Update, Slice
 
 
@@ -46,9 +48,8 @@ class SetSlice(Function):
 
         expr, i, j, seq = self.params
 
-        updateitem(
-            self.ctx, expr,
-            lambda item: item[expr.prop].__setslice__(i, j, seq)
+        updateitems(
+            self.ctx, expr, lambda item: item[expr.prop].__setslice__(i, j, seq)
         )
 
 
@@ -63,7 +64,7 @@ class DelSlice(Function):
 
         expr, i, j = self.params
 
-        updateitem(
+        updateitems(
             self.ctx, expr, lambda item: item[expr.prop].__delslice__(i, j)
         )
 

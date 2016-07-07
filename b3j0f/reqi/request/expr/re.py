@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -28,16 +28,16 @@
 
 from .func import Function
 
-from .utils import updatecond
+from ..utils import updatecond
 
 from re import match
 
 
 class Re(Function):
 
-    def run(self):
+    def _run(self, dispatcher, ctx):
 
         updatecond(
-            self.ctx, self.params[0],
+            ctx, self.params[0],
             lambda item: match(self.params[1], item[self.params[0].prop])
         )

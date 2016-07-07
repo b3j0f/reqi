@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -33,8 +33,8 @@ from .func import Function
 
 class Exists(Function):
 
-    def run(self):
+    def _run(self, *args, **kwargs):
 
-        self.ctx['Exists({0}/{1})'.format(
-            self.params[0].schema, self.params[1]
-        )] = self.params[1] in self.ctx[self.params[1].schema]
+        self.ctx[self.getctxname()] = (
+            self.params[1] in self.ctx[self.params[1].schema]
+        )

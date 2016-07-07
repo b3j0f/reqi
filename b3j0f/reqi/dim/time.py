@@ -26,18 +26,16 @@
 
 """Specification of the time interface."""
 
-
 from .base import Dimension
+
 
 class Time(Dimension):
     """In charge of handling system time."""
-
-    NAME = 'TIME'
 
     __slots__ = ['rrule']
 
     def __init__(self, rrule, *args, **kwargs):
 
-        super(Time, self).__init__(name=Time.NAME, *args, **kwargs)
+        super(Time, self).__init__(*args, **kwargs)
 
         self.rrule = rrule

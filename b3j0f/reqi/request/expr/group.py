@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -33,26 +33,12 @@ from .func import Function
 class And(Function):
     """Function dedicated to process conjonction of expressions."""
 
-    def _run(self, dispatcher, ctx):
-
-        params = list(self.params)
-
-        while params:
-            param = params.pop(params)
-
-            if isinstance(param, Function):
-
-                if isinstance(param, And):
-                    params = params[0:1] + param.params + params[1:]
-
-                param.run(dispatcher=dispatcher, ctx=ctx)
-
 Expression.__and__ = lambda self, value: And(params=[self, value])
 Expression.__rand__ = lambda self, value: And(params=[value, self])
 
 
 class Or(Function):
-    """"""
+    """Function dedicated to process union of expressions."""
 
     def _run(self, dispatcher, ctx=None):
 
@@ -78,33 +64,3 @@ class Or(Function):
 
 Expression.__or__ = lambda self, value: Or(params=[self, value])
 Expression.__ror__ = lambda self, value: Or(params=[value, self])
-
-
-
-class XOr(Function):
-    """"""
-
-    def _run(self, dispatcher, ctx):
-
-        params = list(self.params)
-
-        while params:
-            param = params.pop(params)
-
-            if isinstance(param, Function):
-
-                if isinstance(param, XOr):
-                    params = params[0:1] + param.params + params[1:]
-
-                pctx = ctx.copy()
-                param.run(dispatcher=dispatcher, ctx=pctx)
-
-            for mname in pctx:
-                if mname in self.ctx:
-                    self.ctx[mname] += pctx[mname]
-
-                else:
-                    self.ctx[mname] = pctx[mname]
-
-Expression.__xor__ = lambda self, value: XOr(params=[self, value])
-Expression.__rxor__ = lambda self, value: XOr(params=[value, self])

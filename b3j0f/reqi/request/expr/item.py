@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,32 +26,47 @@
 
 """Specification of the request object."""
 
+__all__ = ['Reverse', 'GetItem', 'SetItem', 'DelItem']
+
 from .base import Expression
 from .func import Function
 
+from ..utils import updateitems
+
 
 class Reverse(Function):
-    def _run(self):
-        self.ctx[self.schema] = reversed(self.ctx[self.schema])
+
+    def _run(self, dispatcher, ctx):
+
+        updateitems(
+            ctx, self.params[0], lambda item: reversed(item[self.params[1]])
+        )
 
 Expression.__reverse__ = lambda self: Reverse(params=[self])
 
-GETITEM = 'getitem'
+class GetItem(Function):
+    pass
 
-SETITEM = 'setitem'
 
 class SetItem(Function):
-    def _run(self):
-        updateitem(self.ctx, self.schema, lambda item: item.__setitem__(self.params[0], self.params[1]))
+
+    def _run(self, dispatcher, ctx):
+
+        updateitems(
+            ctx, self.params[0],
+            lambda item: item.__setitem__(self.params[1], self.params[2])
+        )
 
 
 Expression.__setitem__ = lambda self, key, value: SetItem(params=[self, key, value])
 
-DELITEM = 'delitem'
-
 class DelItem(Function):
-    def _run(self):
-        updateitem(self.ctx, self.schema, lambda item: item.__delitem__(self.params[0]))
+
+    def _run(self, dispatcher, ctx):
+
+        updateitems(
+            ctx, self.params[0], lambda item: item.__delitem__(self.params[1])
+        )
 
 
-Expression.__delitem__ = lambda self, key: SetItem(params=[self, key])
+Expression.__delitem__ = lambda self, key: DelItem(params=[self, key])

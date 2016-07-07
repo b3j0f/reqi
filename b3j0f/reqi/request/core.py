@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2016 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,8 @@
 __all__ = ['Request']
 
 from .base import Node
-from .expr import And, Expression
+from .expr.base import Expression
+from .expr.group import And
 from .utils import getcontext, updateref
 from .update import Update
 
@@ -38,143 +39,88 @@ from collections import Iterable
 NAME_SEPARATOR = '/'
 
 
-class Request(Node):
-    """In charge of dispatching requests."""
+class Request(object):
+    """In charge of executing nodes.
 
-    __slots__ = (
-        'dispatcher', 'scope', 'cond', 'read', 'updates', 'ctx', 'logger'
-    )
+    The result is saved in the attribute ``resctx``.
+    ."""
 
-    def __init__(
-            self, dispatcher=None,
-            scope=None, cond=None, read=None, updates=None, ctx=None,
-            logger=None, *args, **kwargs
-    ):
+    __slots__ = ['dispatcher', 'nodes', 'ctx', 'resctx']
+
+    def __init__(self, dispatcher, nodes, ctx=None, *args, **kwargs):
+        """
+        :param Dispatcher dispatcher: dispatcher.
+        :param list nodes: nodes to execute.
+        :param dict ctx: default expression execution context.
+        """
 
         super(Request, self).__init__(*args, **kwargs)
 
-        self.dispatcher = dispatcher
-        self.scope = scope
-        self.cond = cond
-        self.read = read
-        self.updates = updates
+        self.nodes = nodes
         self.ctx = ctx
-        self.logger = logger
+        self.dispatcher = dispatcher
+        self.resctx = None
 
-    def __iadd__(self, other):
+    def run(self):
+        """Execute this nodes.
 
-        items = other if isinstance(other, Iterable) else [other]
+        :rtype: dict"""
 
-        for item in items:
+        result = None
 
-            if isinstance(item, Update):
-                self.update(item)
-
-            elif isinstance(item, Expression):
-                self.where(item)
-
-            else:
-                self.models(item)
-
-        return self
-
-    def models(self, *models):
-
-        models = list(models)
-
-        if self.scope is None:
-            self.scope = models
-
-        else:
-            self.scope += models
-
-        return self
-
-    def where(self, *expr):
-        """Apply where conditions.
-
-        :param tuple expr: expressions to add to this where.
-        :return: this.
-        :rtype: Request"""
-
-        expr = list(expr)
-
-        if self.cond is None:
-            self.cond = And(params=list(expr))
-
-        else:
-            self.cond = [And(params=[item] + expr) for item in self.cond]
-
-        return self
-
-    def update(self, *updates):
-
-        if self.updates:
-            self.updates = list(updates)
-
-        else:
-            self.updates += list(updates)
-
-        return self
-
-    def run(
-            self, dispatcher=None, scope=None, cond=None, updates=None,
-            read=None, ctx=None
-        ):
-        """Run input requests.
-
-        The processing order is as follow :
-
-        1. scope
-        2. cond
-        3. updates
-        4. read
-
-        :param b3j0f.reqi.dispatch.Dispatcher dispatcher: dispatcher to use.
-            Default is self.dispatcher.
-        :param list scope: list of nodes where default system and schemas will
-            be given.
-        :param list cond: list of conditional Expressions.
-        :param list updates: list of updates (creation, update and deletion).
-        :param list read: list of result Expressions.
-        :param dict ctx: context to share with requests.
-        :return: read objects where keys are alias/prop name and values are
-            model values.
-        :rtype: list of dict."""
-
-        result = []
-
-        dispatcher = dispatcher or self.dispatcher
-        scope = scope or self.scope
-        cond = cond or self.cond
-        updates = updates or self.updates
-        read = read or self.read
-        ctx = ctx or self.ctx or {}
-
-        if scope is not None:
-            updateref(scope)
-            systems, schemas = getcontext(scope)
-
-        if cond is not None:
-            updateref(cond)
-            systems, schemas = getcontext(cond, systems, schemas)
-
-            for item in cond:
-                item.run(dispatcher=dispatcher, ctx=ctx)
-
-        if updates is not None:
-            updateref(updates)
-            systems, schemas = getcontext(cond, systems, schemas)
-
-            for item in updates:
-                item.run(dispatcher=dispatcher, ctx=ctx)
-
-        if read is not None:
-            updateref(read)
-            systems, schemas = getcontext(cond, systems, schemas)
-
-            for item in read:
-                itemresult = read.run(dispatcher=dispatcher, ctx=ctx)
-                result.append(itemresult)
+        if self.nodes:
+            self.resctx = result = self.dispatcher.run(
+                nodes=self.nodes, ctx=self.ctx
+            )
 
         return result
+
+
+class RequestQueue(list):
+    """In charge of processing multi requests with historization of requests."""
+
+    def __init__(self, dispatcher, *args, **kwargs):
+        """
+        :param Dispatcher dispatcher: default dispatcher.
+        :param dict ctx: default expression execution context.
+        :param list nodes: nodes to execute.
+        """
+
+        super(RequestQueue, self).__init__(*args, **kwargs)
+
+        self.dispatcher = dispatcher
+
+    @property
+    def ctx(self):
+        """Get last (calculated) ctx.
+
+        :rtype: dict"""
+
+        return self[-1].resctx if self else None
+
+    def run(self, nodes, ctx=None, dispatcher=None):
+
+        if dispatcher is None:
+            dispatcher = self.dispatcher
+
+        if ctx is None:
+            ctx = self.ctx
+
+        elif self.ctx is not None:
+            ctx.update(self.ctx)
+
+        req = Request(nodes=nodes, ctx=ctx, dispatcher=dispatcher)
+
+        self.append(req)
+
+        self.ctx = req.run()
+
+        return self
+
+    def drop(self, count):
+
+        if count > 0:
+
+            self[:] = self[:-count]
+
+        return self

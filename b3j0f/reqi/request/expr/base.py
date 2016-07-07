@@ -61,7 +61,7 @@ class Expression(Node):
         self.sort = sort
         self.ctxnames = ctxnames
 
-    def run(self, *args, **kwargs):
+    def _run(self, *args, **kwargs):
 
         result = super(Expression, self).run(*args, **kwargs)
 
@@ -83,5 +83,17 @@ class Expression(Node):
 
         if self.sort:
             raise NotImplementedError()
+
+        return result
+
+    def getctxname(self, *args, **kwargs):
+
+        result = super(Expression, self).getctxname(*args, **kwargs)
+
+        if result:
+            result = ''.join(result, '.', self.prop)
+
+        else:
+            result = self.prop
 
         return result
