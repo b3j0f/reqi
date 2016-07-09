@@ -38,11 +38,7 @@ class Expression(Node):
 
     __slots__ = ['prop', 'offset', 'limit', 'groupby', 'sort', 'ctxnames']
 
-    def __init__(
-            self, prop=None, offset=None, limit=None, groupby=None, sort=None,
-            ctxnames=None,
-            *args, **kwargs
-    ):
+    def __init__(self, prop=None, *args, **kwargs):
         """
         :param str prop: property name.
         :param int offset: minimal offset to get. 0 by default.

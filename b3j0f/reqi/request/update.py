@@ -34,7 +34,7 @@ from sys import maxsize
 
 
 class Update(Node):
-    """In charge of refering model properties to create/update.
+    """In charge of refering model properties to update.
 
     Properties are:
 

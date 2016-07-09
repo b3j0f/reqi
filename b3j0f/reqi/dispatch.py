@@ -28,7 +28,7 @@
 
 from b3j0f.utils.version import OrderedDict
 
-from .request.core import Request
+from .request.queue import RequestQueue
 
 NAME_SEPARATOR = '/'
 
@@ -181,6 +181,13 @@ class Dispatcher(object):
         _removeoccurences(schemas)
 
         return systems, schemas
+
+    def queue(self):
+        """Generate a queue from this dispatcher.
+
+        :rtype: RequestQueue"""
+
+        return RequestQueue(dispatcher=self)
 
     def run(self, requests, scopes=None):
         """Run context related to input scope, requests and projection.
