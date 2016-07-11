@@ -41,13 +41,55 @@ class NodeTest(UTCase):
         schema = 'schema'
         alias = 'alias'
         ref = 'ref'
+        ctx = {}
 
-        node = Node(system=system, schema=schema, alias=alias, ref=ref)
+        node = Node(system=system, schema=schema, alias=alias, ref=ref, ctx=ctx)
 
         self.assertEqual(node.system, system)
         self.assertEqual(node.schema, schema)
         self.assertEqual(node.alias, alias)
         self.assertEqual(node.ref, ref)
+        self.assertEqual(node.ctx, ctx)
+
+    def test_getsystems(self):
+
+        system = 'test'
+
+        node = Node(system=system)
+
+        systems = node.getsystems()
+
+        self.assertEqual(systems, set([system]))
+
+
+class GetCtxName(UTCase):
+    """Test the method getctxname."""
+
+    def _assert(self, ctxname=None, **kwargs):
+
+        node = Node(**kwargs)
+
+        self.assertEqual(node.getctxname(), ctxname)
+
+    def test_default(self):
+
+        self._assert()
+
+    def test_system(self):
+
+        self._assert('system', system='system')
+
+    def test_schema(self):
+
+        self._assert('schema', schema='schema')
+
+    def test_systemschema(self):
+
+        self._assert('system.schema', system='system', schema='schema')
+
+    def test_ref(self):
+
+        self._assert(ref=Node(alias='test'))
 
 
 if __name__ == '__main__':

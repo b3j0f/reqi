@@ -8,6 +8,9 @@ venv
 # C extensions
 *.so
 
+# Python extensions
+*.pyc
+
 # Distribution / packaging
 .Python
 env/

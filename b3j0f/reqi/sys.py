@@ -33,11 +33,10 @@ class System(object):
     """In charge of dispatching requests."""
 
     def __init__(
-    		self, name,
+    		self,
             schema=None, schemas=None, dimensions=None, *args, **kwargs
     ):
         """
-        :param str name: system name.
         :param b3j0f.schema.Schema schema: system schema. Default is getschema
             of this.
         :param list of System dependencies: list of system dependencies.
@@ -47,7 +46,19 @@ class System(object):
 
         super(System, self).__init__(*args, **kwargs)
 
-        self.name = name
         self.schema = schema or getschema(type(self))
         self.schemas = schemas or []
         self.dimensions = dimensions or []
+
+    def run(self, nodes, ctx=None):
+        """
+        Run input nodes.
+
+        :param list nodes: nodes to run.
+        :param dict ctx: execution context.
+        :return: execution context where keys are node ctxnames and values are
+            model values.
+        :rtype: dict
+        """
+
+        raise NotImplementedError()

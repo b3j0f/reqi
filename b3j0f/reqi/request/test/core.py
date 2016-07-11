@@ -31,30 +31,58 @@ from unittest import main
 from b3j0f.utils.ut import UTCase
 
 from ..core import Request
+from ..base import Node
+from ...dispatch import Dispatcher
+from ...test.sys import TestSystem as TS
 
 
 class RequestTest(UTCase):
 
+    def setUp(self):
+
+        self.dispatcher = Dispatcher(systems={'1': TS(), '2': TS()})
+
     def test_constructor(self):
 
-        scope = 'scope'
-        cond = 'cond'
-        read = 'read'
-        updates = 'updates'
-        ctx = 'ctx'
+        nodes = 'nodes'
+        ctx = {}
+        dispatcher = 'dispatcher'
 
-        request = Request(
-            scope=scope, cond=cond, read=read, updates=updates, ctx=ctx
-        )
+        request = Request(nodes=nodes, ctx=ctx, dispatcher=self.dispatcher)
 
-        self.assertEqual(request.scope, scope)
-        self.assertEqual(request.cond, cond)
-        self.assertEqual(request.read, read)
-        self.assertEqual(request.updates, updates)
+        self.assertEqual(request.nodes, nodes)
+        self.assertEqual(request.ctx, ctx)
+        self.assertEqual(request.dispatcher, self.dispatcher)
 
-    def test_where(self):
 
-        request = Request()
+class RequestRunTest(UTCase):
+
+    def setUp(self):
+
+        self.dispatcher = Dispatcher(systems={'1': TS(), '2': TS()})
+
+    def test_default(self):
+
+        request = Request(dispatcher=self.dispatcher, nodes=[])
+
+        self.assertFalse(request.run())
+
+    def test_ctx(self):
+
+        ctx = {'1': None}
+
+        request = Request(dispatcher=self.dispatcher, nodes=[], ctx=ctx)
+
+        self.assertEqual(request.run(), ctx)
+
+    def test_nodes(self):
+
+        nodes = [Node(alias=1, system='1'), Node(alias=2, system='2')]
+
+        request = Request(dispatcher=self.dispatcher, nodes=nodes)
+
+        self.assertEqual(request.run(), {1: [nodes[0]], 2: [nodes[1]]})
+
 
 if __name__ == '__main__':
     main()

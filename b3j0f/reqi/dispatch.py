@@ -28,9 +28,7 @@
 
 from b3j0f.utils.version import OrderedDict
 
-from .request.core import Request
-
-NAME_SEPARATOR = '/'
+from .request.core import Request, RequestQueue
 
 
 class Dispatcher(object):
@@ -38,7 +36,7 @@ class Dispatcher(object):
 
     def __init__(self, systems, *args, **kwargs):
         """
-        :param list systems: systems to handle.
+        :param dict systems: systems by name to handle.
         """
 
         super(Dispatcher, self).__init__(*args, **kwargs)
@@ -47,7 +45,6 @@ class Dispatcher(object):
 
         self._systemsperschema = OrderedDict()
         self._schemaspersystem = OrderedDict()
-        self._systemsbyname = OrderedDict()
         self._schemasbyname = OrderedDict()
         self._schemasperprop = OrderedDict()
 
@@ -59,15 +56,12 @@ class Dispatcher(object):
 
         self._systemsperschema.clear()
         self._schemaspersystem.clear()
-        self._systemsbyname.clear()
         self._schemasbyname.clear()
         self._schemasperprop.clear()
 
-        for system in self.systems:
+        for sysn in self.systems:
 
-            sysn = system.name
-
-            self._systemsbyname[sysn] = system
+            system = self.systems[sysn]
 
             for schema in system.schemas:
 
@@ -182,41 +176,13 @@ class Dispatcher(object):
 
         return systems, schemas
 
-    def run(self, requests, scopes=None):
-        """Run context related to input scope, requests and projection.
+    def queue(self):
+        """Create a new Request Queue.
 
-        :param list scopes: default system and schema to use in requests.
-        :param list requests: list of requests to process.
+        :rtype: RequestQueue"""
 
-        :rtype: list
-        :return: contexts of requests in the same order than input requests."""
+        return RequestQueue(dispatcher=self)
 
-        # default systems and schemas
-
-        result = []
-
-        systems, schemas = [], []
-
-        if scopes is not None:
-            systems, schemas = set(), set()
-            for sco in scopes:
-                scosys, scosch = sco.getsysnsch()
-
-                systems |= set(scosys)
-                schemas |= set(scosch)
-
-            systems = list(systems)
-            schemas = list(schemas)
-
-        else:
-            systems = list(self._systemsbyname)
-            schemas = list(self._schemasbyname)
-
-        for request in requests:
-            reqctx = request.run(self, systems=systems, schemas=schemas)
-            result.append(reqctx)
-
-        return result
 
 def _removeoccurences(l):
     """Ensure to have one item value in removing multi-occurences from the end

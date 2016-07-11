@@ -29,6 +29,7 @@
 from unittest import main
 
 from b3j0f.utils.ut import UTCase
+from b3j0f.utils.version import OrderedDict
 from b3j0f.schema import Schema, Property
 from b3j0f.schema.prop import SchemaProperty
 
@@ -60,7 +61,7 @@ class DispatcherTest(UTCase):
 
     def setUp(self):
 
-        self.systems = []
+        self.systems = OrderedDict()
 
         self.allschemas = []
 
@@ -68,7 +69,9 @@ class DispatcherTest(UTCase):
 
         for i in range(self.count):
 
-            syskwargs = {'name': '{0}'.format(i)}
+            syskwargs = {}
+
+            sysn = str(i)
 
             schemas = []
 
@@ -96,7 +99,7 @@ class DispatcherTest(UTCase):
 
             system = System(**syskwargs)
 
-            self.systems.append(system)
+            self.systems[sysn] = system
 
         self.dispatcher = Dispatcher(systems=self.systems)
 

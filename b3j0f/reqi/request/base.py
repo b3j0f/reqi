@@ -26,6 +26,8 @@
 
 """Specification of the node object."""
 
+from uuid import uuid4 as uuid
+
 
 class Node(object):
     """Elementary part of request.
@@ -62,6 +64,8 @@ class Node(object):
         :rtype: str
         """
 
+        result = None
+
         if self.alias:
             result = self.alias
 
@@ -69,16 +73,10 @@ class Node(object):
             if self.system:
                 result = self.system
                 if self.schema:
-                    result = ''.join(result, '.', self.schema)
+                    result = ''.join([result, '.', self.schema])
 
             elif self.schema:
                 result = self.schema
-
-            else:
-                result = ''
-
-        else:
-            result = self.ref.getctxname()
 
         return result
 
@@ -89,7 +87,7 @@ class Node(object):
         """
 
         if self.ref is None:
-            result = set([self.system])
+            result = [self.system]
 
         else:
             result = self.ref.getsystems()
@@ -115,8 +113,8 @@ class Node(object):
             self._run(dispatcher=dispatcher, ctx=ctx)
 
         if sname is not None:
-            system = dispatcher.getsystem(sname)
-            system.run(ctx=ctx)
+            system = dispatcher.systems[sname]
+            system.run(nodes=[self], ctx=ctx)
 
         self.ctx = ctx
 

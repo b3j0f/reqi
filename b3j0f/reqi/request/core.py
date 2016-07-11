@@ -24,19 +24,9 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Specification of the dispatcher interface."""
+"""Specification of the request interface."""
 
 __all__ = ['Request']
-
-from .base import Node
-from .expr.base import Expression
-from .expr.group import And
-from .utils import getcontext, updateref
-from .update import Update
-
-from collections import Iterable
-
-NAME_SEPARATOR = '/'
 
 
 class Request(object):
@@ -61,17 +51,20 @@ class Request(object):
         self.dispatcher = dispatcher
         self.resctx = None
 
-    def run(self):
+    def run(self, force=False):
         """Execute this nodes.
 
+        :param bool force: force running even if resctx exist already.
         :rtype: dict"""
 
-        result = None
+        if self.nodes and (force or self.resctx is None):
 
-        if self.nodes:
-            self.resctx = result = self.dispatcher.run(
-                nodes=self.nodes, ctx=self.ctx
-            )
+            for node in self.nodes:
+                self.resctx = node.run(
+                    dispatcher=self.dispatcher, ctx=self.ctx
+                )
+
+        result = self.resctx
 
         return result
 

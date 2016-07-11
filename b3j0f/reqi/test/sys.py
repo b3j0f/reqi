@@ -33,6 +33,7 @@ from b3j0f.schema import getschema
 
 from ..sys import System
 from ..dim.base import Dimension
+from ..request.base import Node
 
 
 class TestSystem(System):
@@ -47,17 +48,37 @@ class TestSystem(System):
 
         self.dimensions = [Dimension('a'), Dimension('b')]
 
+    def run(self, nodes, ctx=None, *args, **kwargs):
+
+        result = ctx or {}
+
+        for node in nodes:
+            ctxname = node.getctxname()
+
+            result.setdefault(ctxname, []).append(node)
+
+        return result
 
 class SystemTest(UTCase):
 
+    def setUp(self):
+
+        self.system = TestSystem()
+
     def test_constructor(self):
 
-        name = 'test'
+        schema = getschema(TestSystem)
 
-        system = TestSystem(name=name)
+        for prop in self.system.schema:
+            self.assertIn(prop, schema)
 
-        self.assertEqual(system.name, name)
-        self.assertEqual(system.schema, getschema(TestSystem))
+    def test_run(self):
+
+        nodes = [Node(alias='1'), Node(alias='2')]
+
+        ctx = self.system.run(nodes=nodes)
+
+        self.assertEqual(ctx, {'1': [nodes[0]], '2': [nodes[1]]})
 
 
 if __name__ == '__main__':
