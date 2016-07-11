@@ -24,47 +24,31 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Specification of the request interface."""
+"""Specification of the class Update.
 
-__all__ = ['Request']
+Equivalent to the UPDATE statement in SQL."""
+
+from .base import Node
 
 
-class Request(object):
-    """In charge of executing nodes.
+class Create(Node):
+    """In charge of refering model properties to create/update.
 
-    The result is saved in the attribute ``resctx``
+    Properties are:
 
-    A request save references to nodes, context and a dispatcher."""
+    - pset: used to set model properties.
+    - punset: used only if this is an update element (ref must be not None).
+    - ref: referes to a filter for update elements. If None, this is just an
+        element creation (and punset is useless)."""
 
-    __slots__ = ['dispatcher', 'nodes', 'ctx', 'resctx']
+    __slots__ = ['content']
 
-    def __init__(self, dispatcher, nodes, ctx=None, *args, **kwargs):
+    def __init__(self, content=None, *args, **kwargs):
         """
-        :param Dispatcher dispatcher: dispatcher.
-        :param list nodes: nodes to execute.
-        :param dict ctx: default expression execution context.
+        :param dict pset: properties to set. Key are property name, values are
+            constant values or
         """
 
-        super(Request, self).__init__(*args, **kwargs)
+        super(Create, self).__init__(*args, **kwargs)
 
-        self.nodes = nodes
-        self.ctx = ctx
-        self.dispatcher = dispatcher
-        self.resctx = None
-
-    def run(self, force=False):
-        """Execute this nodes.
-
-        :param bool force: force running even if resctx exist already.
-        :rtype: dict"""
-
-        if self.nodes and (force or self.resctx is None):
-
-            for node in self.nodes:
-                self.resctx = node.run(
-                    dispatcher=self.dispatcher, ctx=self.ctx
-                )
-
-        result = self.resctx
-
-        return result
+        self.content = content

@@ -24,47 +24,12 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Specification of the request interface."""
+"""Specification of the class Delete.
 
-__all__ = ['Request']
+Equivalent to the DELETE statement in SQL."""
+
+from .base import Node
 
 
-class Request(object):
-    """In charge of executing nodes.
-
-    The result is saved in the attribute ``resctx``
-
-    A request save references to nodes, context and a dispatcher."""
-
-    __slots__ = ['dispatcher', 'nodes', 'ctx', 'resctx']
-
-    def __init__(self, dispatcher, nodes, ctx=None, *args, **kwargs):
-        """
-        :param Dispatcher dispatcher: dispatcher.
-        :param list nodes: nodes to execute.
-        :param dict ctx: default expression execution context.
-        """
-
-        super(Request, self).__init__(*args, **kwargs)
-
-        self.nodes = nodes
-        self.ctx = ctx
-        self.dispatcher = dispatcher
-        self.resctx = None
-
-    def run(self, force=False):
-        """Execute this nodes.
-
-        :param bool force: force running even if resctx exist already.
-        :rtype: dict"""
-
-        if self.nodes and (force or self.resctx is None):
-
-            for node in self.nodes:
-                self.resctx = node.run(
-                    dispatcher=self.dispatcher, ctx=self.ctx
-                )
-
-        result = self.resctx
-
-        return result
+class Delete(Node):
+    """In charge of deleting data."""

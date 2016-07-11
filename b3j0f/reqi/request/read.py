@@ -24,47 +24,34 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Specification of the request interface."""
+"""Specification of the class Read.
 
-__all__ = ['Request']
+Equivalent to the SELECT statement in SQL."""
+
+from .base import Node
 
 
-class Request(object):
-    """In charge of executing nodes.
+class Read(Node):
+    """In charge of selecting data to retrieve."""
 
-    The result is saved in the attribute ``resctx``
+    __slots__ = ['exprs', 'offset', 'limit', 'groupby', 'sort']
 
-    A request save references to nodes, context and a dispatcher."""
-
-    __slots__ = ['dispatcher', 'nodes', 'ctx', 'resctx']
-
-    def __init__(self, dispatcher, nodes, ctx=None, *args, **kwargs):
+    def __init__(
+            self, exprs, offset=None, limit=None, groupby=None, sort=None,
+            *args, **kwargs
+    ):
         """
-        :param Dispatcher dispatcher: dispatcher.
-        :param list nodes: nodes to execute.
-        :param dict ctx: default expression execution context.
+        :param list exprs: list of expressions to select.
+        :param int offset: starting index of data to retrieve.
+        :param int limit: maximal number of elements to retrieve.
+        :param list groupby: list of expressions to groupy by.
+        :param list sort: list of field to sort.
         """
 
-        super(Request, self).__init__(*args, **kwargs)
+        super(Read, self).__init__(*args, **kwargs)
 
-        self.nodes = nodes
-        self.ctx = ctx
-        self.dispatcher = dispatcher
-        self.resctx = None
-
-    def run(self, force=False):
-        """Execute this nodes.
-
-        :param bool force: force running even if resctx exist already.
-        :rtype: dict"""
-
-        if self.nodes and (force or self.resctx is None):
-
-            for node in self.nodes:
-                self.resctx = node.run(
-                    dispatcher=self.dispatcher, ctx=self.ctx
-                )
-
-        result = self.resctx
-
-        return result
+        self.exprs = exprs
+        self.offset = offset
+        self.limit = limit
+        self.groupby = groupby
+        self.sort = sort

@@ -28,7 +28,7 @@
 
 from b3j0f.utils.version import OrderedDict
 
-from .request.core import Request, RequestQueue
+from .request.core import Request
 
 
 class Dispatcher(object):

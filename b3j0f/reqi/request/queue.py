@@ -24,47 +24,70 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Specification of the request interface."""
+"""Specification of the request queue object."""
 
-__all__ = ['Request']
+__all__ = ['RequestQueue']
+
+from .core import Request
 
 
-class Request(object):
-    """In charge of executing nodes.
+class RequestQueue(list):
+    """In charge of processing multi requests with historization of requests."""
 
-    The result is saved in the attribute ``resctx``
-
-    A request save references to nodes, context and a dispatcher."""
-
-    __slots__ = ['dispatcher', 'nodes', 'ctx', 'resctx']
-
-    def __init__(self, dispatcher, nodes, ctx=None, *args, **kwargs):
+    def __init__(self, dispatcher, *args, **kwargs):
         """
-        :param Dispatcher dispatcher: dispatcher.
-        :param list nodes: nodes to execute.
+        :param Dispatcher dispatcher: default dispatcher.
         :param dict ctx: default expression execution context.
+        :param list nodes: nodes to execute.
         """
 
-        super(Request, self).__init__(*args, **kwargs)
+        super(RequestQueue, self).__init__(*args, **kwargs)
 
-        self.nodes = nodes
-        self.ctx = ctx
         self.dispatcher = dispatcher
-        self.resctx = None
 
-    def run(self, force=False):
-        """Execute this nodes.
+    @property
+    def ctx(self):
+        """Get last (calculated) ctx.
 
-        :param bool force: force running even if resctx exist already.
         :rtype: dict"""
 
-        if self.nodes and (force or self.resctx is None):
+        return self[-1].resctx if self else None
 
-            for node in self.nodes:
-                self.resctx = node.run(
-                    dispatcher=self.dispatcher, ctx=self.ctx
-                )
+    def run(self, nodes, ctx=None, dispatcher=None):
+        """Run input nodes in adding a new request to this queue.
 
-        result = self.resctx
+        :param list nodes: nodes to process.
+        :param dict ctx: execution context.
+        :param Dispatcher dispatcher: dispatcher to use. Default is this
+            dispatcher.
+        """
 
-        return result
+        if dispatcher is None:
+            dispatcher = self.dispatcher
+
+        if ctx is None:
+            ctx = self.ctx
+
+        elif self.ctx is not None:
+            ctx.update(self.ctx)
+
+        req = Request(nodes=nodes, ctx=ctx, dispatcher=dispatcher)
+
+        self.append(req)
+
+        self.ctx = req.run()
+
+        return self
+
+    def drop(self, count):
+        """Drop last ``count`` requests.
+
+        :param int count: count requests to drop off.
+        :return: this.
+        :rtype: RequestQueue"""
+
+        if count > 0:
+
+            self[:] = self[:-count]
+
+        return self
