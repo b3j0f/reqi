@@ -68,6 +68,9 @@ class RequestQueue(list):
         if ctx is None:
             ctx = self.ctx
 
+            if ctx is not None:
+                ctx = ctx.copy()
+
         elif self.ctx is not None:
             ctx.update(self.ctx)
 
@@ -75,11 +78,11 @@ class RequestQueue(list):
 
         self.append(req)
 
-        self.ctx = req.run()
+        req.run()
 
         return self
 
-    def drop(self, count):
+    def drop(self, count=1):
         """Drop last ``count`` requests.
 
         :param int count: count requests to drop off.
