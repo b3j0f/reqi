@@ -58,11 +58,13 @@ class Request(object):
         :param bool force: force running even if resctx exist already.
         :rtype: dict"""
 
-        if self.nodes and (force or self.resctx is None):
+        if force or self.resctx is None:
+
+            self.resctx = self.ctx or {}
 
             for node in self.nodes:
                 self.resctx = node.run(
-                    dispatcher=self.dispatcher, ctx=self.ctx
+                    dispatcher=self.dispatcher, ctx=self.resctx
                 )
 
         result = self.resctx

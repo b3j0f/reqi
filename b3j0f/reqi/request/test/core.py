@@ -77,11 +77,19 @@ class RequestRunTest(UTCase):
 
     def test_nodes(self):
 
-        nodes = [Node(alias=1, system='1'), Node(alias=2, system='2')]
+        nodes = [Node(alias='1', system='1'), Node(alias='2', system='2')]
 
         request = Request(dispatcher=self.dispatcher, nodes=nodes)
 
-        self.assertEqual(request.run(), {1: [nodes[0]], 2: [nodes[1]]})
+        self.assertEqual(request.run(), {'1': [nodes[0]], '2': [nodes[1]]})
+
+    def test_nodes_wosystem(self):
+
+        nodes = [Node(alias='1'), Node(alias='2')]
+
+        request = Request(dispatcher=self.dispatcher, nodes=nodes)
+
+        self.assertEqual(request.run(), {'1': [nodes[0]], '2': [nodes[1]]})
 
 
 if __name__ == '__main__':

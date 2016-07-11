@@ -86,16 +86,25 @@ class Node(object):
         :rtype: set
         """
 
-        if self.ref is None:
-            result = [self.system]
+        result = [] if self.system is None else [self.system]
 
-        else:
-            result = self.ref.getsystems()
+        if self.ref is not None:
+
+            systems = self.ref.getsystems()
+
+            result = result + [
+                system for system in systems if system not in result
+            ]
 
         return result
 
     def run(self, dispatcher, ctx=None):
-        """Run this node."""
+        """Run this node and return the context.
+
+        :param b3j0f.reqi.dispatch.Dispatcher dispatcher: dispatcher to run.
+        :param dict ctx: execution context.
+        :return: execution context.
+        :rtype: dict"""
 
         if ctx is None:
             ctx = {}
@@ -104,19 +113,22 @@ class Node(object):
 
         sname = None
 
-        if len(systems) == 1:
-            for sname in systems:
-                break
+        if systems:
+
+            if len(systems) == 1:
+                sname = systems[0]
+                system = dispatcher.systems[sname]
+                ctx = system.run(nodes=[self], ctx=ctx)
+
+            else:
+                ctx = self._run(dispatcher=dispatcher, ctx=ctx)
 
         else:
-            sname = self.system
-            self._run(dispatcher=dispatcher, ctx=ctx)
-
-        if sname is not None:
-            system = dispatcher.systems[sname]
-            system.run(nodes=[self], ctx=ctx)
+            ctx.setdefault(self.getctxname(), []).append(self)
 
         self.ctx = ctx
+
+        return self.ctx
 
     def _run(self, dispatcher, ctx):
 

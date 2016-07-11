@@ -51,7 +51,18 @@ class NodeTest(UTCase):
         self.assertEqual(node.ref, ref)
         self.assertEqual(node.ctx, ctx)
 
-    def test_getsystems(self):
+
+class GetSystems(UTCase):
+
+    def test_default(self):
+
+        node = Node()
+
+        systems = node.getsystems()
+
+        self.assertFalse(systems)
+
+    def test_system(self):
 
         system = 'test'
 
@@ -60,6 +71,45 @@ class NodeTest(UTCase):
         systems = node.getsystems()
 
         self.assertEqual(systems, [system])
+
+    def test_defaultrefdefault(self):
+
+        node = Node(ref=Node())
+
+        systems = node.getsystems()
+
+        self.assertFalse(systems)
+
+    def test_defaultref(self):
+
+        system = 'test'
+
+        node = Node(ref=Node(system=system))
+
+        systems = node.getsystems()
+
+        self.assertEqual(systems, [system])
+
+    def test_refdefault(self):
+
+        system = 'test'
+
+        node = Node(ref=Node(), system=system)
+
+        systems = node.getsystems()
+
+        self.assertEqual(systems, [system])
+
+    def test_ref(self):
+
+        system = 'test'
+        refsystem = 'example'
+
+        node = Node(ref=Node(system=refsystem), system=system)
+
+        systems = node.getsystems()
+
+        self.assertEqual(systems, [system, refsystem])
 
 
 class GetCtxName(UTCase):
