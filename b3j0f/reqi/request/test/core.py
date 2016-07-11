@@ -91,6 +91,20 @@ class RequestRunTest(UTCase):
 
         self.assertEqual(request.run(), {'1': [nodes[0]], '2': [nodes[1]]})
 
+    def test_force(self):
+
+        request = Request(dispatcher=self.dispatcher, nodes=[])
+
+        result = request.run()
+
+        result2 = request.run()
+
+        self.assertIs(result, result2)
+
+        result3 = request.run(force=True)
+
+        self.assertIsNot(result, result3)
+
 
 if __name__ == '__main__':
     main()
