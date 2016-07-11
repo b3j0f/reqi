@@ -36,7 +36,7 @@ from ..base import Node
 class Expression(Node):
     """Expression request object."""
 
-    __slots__ = ['prop', 'offset', 'limit', 'groupby', 'sort', 'ctxnames']
+    __slots__ = ['prop']
 
     def __init__(self, prop=None, *args, **kwargs):
         """
@@ -51,36 +51,6 @@ class Expression(Node):
         super(Expression, self).__init__(*args, **kwargs)
 
         self.prop = prop or type(self).__name__
-        self.offset = offset
-        self.limit = limit
-        self.groupby = groupby
-        self.sort = sort
-        self.ctxnames = ctxnames
-
-    def _run(self, *args, **kwargs):
-
-        result = super(Expression, self).run(*args, **kwargs)
-
-        if self.ctxnames:
-            result, oldresult = {}, result
-
-            for ctxname in self.ctxnames:
-                result[ctxname] = oldresult[ctxname]
-
-        if self.offset or self.limit:
-            offset = self.offset or 0
-            limit = self.limit or maxsize
-
-            for key in list(result):
-                result[key] = result[offset:limit]
-
-        if self.groupby:
-            raise NotImplementedError()
-
-        if self.sort:
-            raise NotImplementedError()
-
-        return result
 
     def getctxname(self, *args, **kwargs):
 

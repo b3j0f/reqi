@@ -55,3 +55,28 @@ class Read(Node):
         self.limit = limit
         self.groupby = groupby
         self.sort = sort
+
+    def _run(self, *args, **kwargs):
+
+        result = super(Expression, self).run(*args, **kwargs)
+
+        if self.ctxnames:
+            result, oldresult = {}, result
+
+            for ctxname in self.ctxnames:
+                result[ctxname] = oldresult[ctxname]
+
+        if self.offset or self.limit:
+            offset = self.offset or 0
+            limit = self.limit or maxsize
+
+            for key in list(result):
+                result[key] = result[offset:limit]
+
+        if self.groupby:
+            raise NotImplementedError()
+
+        if self.sort:
+            raise NotImplementedError()
+
+        return result

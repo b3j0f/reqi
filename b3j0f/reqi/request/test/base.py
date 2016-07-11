@@ -59,7 +59,7 @@ class NodeTest(UTCase):
 
         systems = node.getsystems()
 
-        self.assertEqual(systems, set([system]))
+        self.assertEqual(systems, [system])
 
 
 class GetCtxName(UTCase):

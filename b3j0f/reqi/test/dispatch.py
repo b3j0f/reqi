@@ -215,5 +215,14 @@ class GetSystemsWithSchemasTest(DispatcherTest):
         self.assertEqual(schemas, ['2'])
 
 
+class QueueTest(UTCase):
+
+    def test(self):
+
+        dispatcher = Dispatcher(systems={})
+        queue = dispatcher.queue()
+
+        self.assertIs(dispatcher, queue.dispatcher)
+
 if __name__ == '__main__':
     main()
