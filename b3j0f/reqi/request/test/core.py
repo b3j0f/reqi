@@ -31,7 +31,7 @@ from unittest import main
 from b3j0f.utils.ut import UTCase
 
 from ..core import Request
-from ..base import Node
+from ..base import Node, ALIAS
 from ...dispatch import Dispatcher
 from ...test.sys import TestSystem as TS
 
@@ -81,7 +81,19 @@ class RequestRunTest(UTCase):
 
         request = Request(dispatcher=self.dispatcher, nodes=nodes)
 
-        self.assertEqual(request.run(), {'1': [nodes[0]], '2': [nodes[1]]})
+        ctx = request.run()
+
+        self.assertEqual(
+            ctx,
+            {
+                '1': [nodes[0]],
+                '2': [nodes[1]],
+                ALIAS: {
+                    '1': nodes[0],
+                    '2': nodes[1]
+                }
+            }
+        )
 
     def test_nodes_wosystem(self):
 
@@ -89,7 +101,17 @@ class RequestRunTest(UTCase):
 
         request = Request(dispatcher=self.dispatcher, nodes=nodes)
 
-        self.assertEqual(request.run(), {'1': [nodes[0]], '2': [nodes[1]]})
+        ctx = request.run()
+
+        self.assertEqual(
+            ctx,
+            {
+                ALIAS: {
+                    '1': nodes[0],
+                    '2': nodes[1]
+                }
+            }
+        )
 
     def test_force(self):
 

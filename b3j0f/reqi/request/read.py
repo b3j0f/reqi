@@ -28,7 +28,14 @@
 
 Equivalent to the SELECT statement in SQL."""
 
+__all__ = ['Read']
+
 from .base import Node
+
+from six import string_types
+
+ASCENDING = 1  #: ascending sort order.
+DESCENDING = -1  #: descending sort order.
 
 
 class Read(Node):
@@ -58,13 +65,13 @@ class Read(Node):
 
     def _run(self, *args, **kwargs):
 
-        result = super(Expression, self).run(*args, **kwargs)
+        result = super(Read, self).run(*args, **kwargs)
 
-        if self.ctxnames:
+        if self.exprs:
             result, oldresult = {}, result
 
-            for ctxname in self.ctxnames:
-                result[ctxname] = oldresult[ctxname]
+            for expr in self.exprs:
+                result[expr] = oldresult.expr
 
         if self.offset or self.limit:
             offset = self.offset or 0
@@ -77,6 +84,13 @@ class Read(Node):
             raise NotImplementedError()
 
         if self.sort:
-            raise NotImplementedError()
+            for sortp in self.sort:
+                if isinstance(sortp, string_types):
+                    sortp = (sortp, ASCENDING)
+
+                for key in list(result):
+                    result[key] = sorted(
+                        result[key], key=sortp[0], reverse=sortp==DESCENDING
+                    )
 
         return result

@@ -28,13 +28,15 @@
 
 __all__ = ['RequestQueue']
 
-from .core import Request
+from .core import Request, DEFAULT_OPTIMIZE
 
 
 class RequestQueue(list):
     """In charge of processing multi requests with historization of requests."""
 
-    def __init__(self, dispatcher, *args, **kwargs):
+    __slots__ = ['dispatcher', 'optimize']
+
+    def __init__(self, dispatcher, optimize=DEFAULT_OPTIMIZE, *args, **kwargs):
         """
         :param Dispatcher dispatcher: default dispatcher.
         :param dict ctx: default expression execution context.
@@ -44,6 +46,7 @@ class RequestQueue(list):
         super(RequestQueue, self).__init__(*args, **kwargs)
 
         self.dispatcher = dispatcher
+        self.optimize = optimize
 
     @property
     def ctx(self):
@@ -53,7 +56,7 @@ class RequestQueue(list):
 
         return self[-1].resctx if self else None
 
-    def run(self, nodes, ctx=None, dispatcher=None):
+    def run(self, nodes, ctx=None, dispatcher=None, optimize=None):
         """Run input nodes in adding a new request to this queue.
 
         :param list nodes: nodes to process.
@@ -61,6 +64,9 @@ class RequestQueue(list):
         :param Dispatcher dispatcher: dispatcher to use. Default is this
             dispatcher.
         """
+
+        if optimize is None:
+            optimize = self.optimize
 
         if dispatcher is None:
             dispatcher = self.dispatcher
@@ -78,7 +84,7 @@ class RequestQueue(list):
 
         self.append(req)
 
-        req.run()
+        req.run(optimize=optimize)
 
         return self
 

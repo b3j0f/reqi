@@ -28,6 +28,8 @@
 
 Equivalent to the UPDATE statement in SQL."""
 
+__all__ = ['Update']
+
 from .base import Node
 
 from sys import maxsize

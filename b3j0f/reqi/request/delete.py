@@ -28,6 +28,8 @@
 
 Equivalent to the DELETE statement in SQL."""
 
+__all__ = ['Delete']
+
 from .base import Node
 
 

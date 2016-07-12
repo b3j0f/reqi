@@ -33,7 +33,7 @@ from b3j0f.schema import getschema
 
 from ..sys import System
 from ..dim.base import Dimension
-from ..request.base import Node
+from ..request.base import Node, ALIAS
 
 
 class TestSystem(System):

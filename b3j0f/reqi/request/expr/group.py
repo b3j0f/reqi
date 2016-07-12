@@ -26,12 +26,31 @@
 
 """Specification of the request object."""
 
+__all__ = ['And', 'Or']
+
+from ..base import Node
 from .base import Expression
 from .func import Function
 
 
 class And(Function):
     """Function dedicated to process conjonction of expressions."""
+
+    def _run(self, dispatcher, ctx, *args, **kwargs):
+
+        systems = self.getsystems()
+
+        for sysname in systems:
+
+            system = dispatcher.systems[sysname]
+
+            cnode = self.copy(system=system)
+
+            ctx = system.run(node=cnode, dispatcher=dispatcher, ctx=ctx)
+
+        self.ctx = ctx
+
+        return self.ctx
 
 Expression.__and__ = lambda self, value: And(params=[self, value])
 Expression.__rand__ = lambda self, value: And(params=[value, self])
@@ -40,7 +59,7 @@ Expression.__rand__ = lambda self, value: And(params=[value, self])
 class Or(Function):
     """Function dedicated to process union of expressions."""
 
-    def _run(self, dispatcher, ctx=None):
+    def _run(self, dispatcher, ctx, *args, **kwargs):
 
         params = list(self.params)
 

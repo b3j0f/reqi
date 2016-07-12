@@ -26,6 +26,8 @@
 
 """Specification of the System interface."""
 
+__all__ = ['System']
+
 from b3j0f.schema import getschema
 
 

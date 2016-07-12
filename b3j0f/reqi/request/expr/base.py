@@ -63,3 +63,16 @@ class Expression(Node):
             result = self.prop
 
         return result
+
+    def copy(self, system, *args, **kwargs):
+
+        result = super(Expression, self).copy(system=system, *args, **kwargs)
+
+        params = [
+            param.copy(system=system) if isinstance(param, Node) else param
+            for param in self.params
+        ]
+
+        result.params = params
+
+        return result

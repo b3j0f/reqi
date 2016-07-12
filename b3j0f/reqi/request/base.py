@@ -26,7 +26,12 @@
 
 """Specification of the node object."""
 
+__all__ = ['Node']
+
 from uuid import uuid4 as uuid
+
+DEFAULT_OPTIMIZE = True
+ALIAS = 'ALIAS'
 
 
 class Node(object):
@@ -58,6 +63,17 @@ class Node(object):
         self.ref = ref
         self.ctx = ctx
 
+    def updateref(self, ctx):
+        """Update this node related to input ctx.
+
+        Optimizations are updating of references."""
+
+        if self.alias is not None:
+            ctx.setdefault(ALIAS, {})[self.alias] = self
+
+        if self.ref in ctx:
+            self.ref = ctx.setdefault(ALIAS, {})[self.ref]
+
     def getctxname(self):
         """Get node context name.
 
@@ -81,7 +97,7 @@ class Node(object):
         return result
 
     def getsystems(self):
-        """Get all systems used by this node.
+        """Get all this system names.
 
         :rtype: set
         """
@@ -92,52 +108,54 @@ class Node(object):
 
             systems = self.ref.getsystems()
 
-            result = result + [
+            result += [
                 system for system in systems if system not in result
             ]
 
         return result
 
-    def run(self, dispatcher, ctx=None):
+    def copy(self, system):
+        """Copy this node in keeping sub nodes where system equals input system
+        or None.
+
+        :param str system: system name.
+        """
+
+        kwargs = {}
+
+        for slot in self.__slots__:
+
+            kwargs[slot] = getattr(self, slot)
+
+        result = type(self)(**kwargs)
+
+        return result
+
+    def run(self, dispatcher, ctx=None, optimize=DEFAULT_OPTIMIZE):
         """Run this node and return the context.
 
         :param b3j0f.reqi.dispatch.Dispatcher dispatcher: dispatcher to run.
         :param dict ctx: execution context.
+        :param bool optimize: if True (default), optimize this node.
         :return: execution context.
         :rtype: dict"""
 
         if ctx is None:
             ctx = {}
 
-        systems = self.getsystems()
+        if optimize:
+            self.updateref(ctx=ctx)
 
-        sname = None
-
-        if systems:
-
-            if len(systems) == 1:
-                sname = systems[0]
-                system = dispatcher.systems[sname]
-                ctx = system.run(nodes=[self], ctx=ctx)
-
-            else:
-                ctx = self._run(dispatcher=dispatcher, ctx=ctx)
-
-        else:
-            ctx.setdefault(self.getctxname(), []).append(self)
+        ctx = self._run(dispatcher=dispatcher, ctx=ctx)
 
         self.ctx = ctx
 
-        return self.ctx
+        return ctx
 
     def _run(self, dispatcher, ctx):
 
-        raise NotImplementedError()
+        if self.system is not None:
+            system = dispatcher.systems[self.system]
+            system.run(nodes=[self], ctx=ctx)
 
-    def __str__(self):
-
-        return self.getctxname()
-
-    def __repr__(self):
-
-        return self.getctxname()
+        return ctx

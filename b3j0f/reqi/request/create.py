@@ -24,9 +24,11 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Specification of the class Update.
+"""Specification of the class Create.
 
-Equivalent to the UPDATE statement in SQL."""
+Equivalent to the INSERT statement in SQL."""
+
+__all__ = ['Create']
 
 from .base import Node
 
