@@ -28,11 +28,13 @@
 
 Equivalent to the SELECT statement in SQL."""
 
-__all__ = ['Read']
+__all__ = ['Read', 'Cursor']
 
-from .base import Node
+from ..base import Node
 
 from six import string_types
+
+from sys import maxsize
 
 ASCENDING = 1  #: ascending sort order.
 DESCENDING = -1  #: descending sort order.
@@ -48,7 +50,9 @@ class Read(Node):
             *args, **kwargs
     ):
         """
-        :param list exprs: list of expressions to select.
+        :param list exprs: list of expressions to select. expressions are Node
+            or context key names. It becomes possible to retrieve all alias in
+            using the expression 'ALIAS'.
         :param int offset: starting index of data to retrieve.
         :param int limit: maximal number of elements to retrieve.
         :param list groupby: list of expressions to groupy by.
@@ -63,22 +67,33 @@ class Read(Node):
         self.groupby = groupby
         self.sort = sort
 
-    def _run(self, *args, **kwargs):
+    def cursor(self, dispatcher, ctx, *args, **kwargs):
+        """Process this read method and returns a cursor.
 
-        result = super(Read, self).run(*args, **kwargs)
+        :param dict ctx: execution context.
+        :return: read result.
+        :rtype: Cursor
+        """
 
-        if self.exprs:
-            result, oldresult = {}, result
+        newctx = {}
 
-            for expr in self.exprs:
-                result[expr] = oldresult.expr
+        for expr in self.exprs:
+
+            ctxname = expr
+
+            if isinstance(expr, Node):
+
+                ctx = expr.run(dispatcher=dispatcher, ctx=ctx)
+                ctxname = expr.getctxname()
+
+            newctx[ctxname] = ctx[ctxname]
 
         if self.offset or self.limit:
             offset = self.offset or 0
             limit = self.limit or maxsize
 
-            for key in list(result):
-                result[key] = result[offset:limit]
+            for key in list(newctx):
+                newctx[key] = newctx[key][offset:offset+limit+1]
 
         if self.groupby:
             raise NotImplementedError()
@@ -88,9 +103,56 @@ class Read(Node):
                 if isinstance(sortp, string_types):
                     sortp = (sortp, ASCENDING)
 
-                for key in list(result):
-                    result[key] = sorted(
-                        result[key], key=sortp[0], reverse=sortp==DESCENDING
+                for key in list(newctx):
+                    newctx[key] = sorted(
+                        newctx[key], key=sortp[0], reverse=sortp==DESCENDING
                     )
 
+        result = Cursor(ctx=newctx)
+
         return result
+
+
+class Cursor(object):
+    """Read object processing result."""
+
+    __slots__ = ['_ctx', '_index', '_len']
+
+    def __init__(self, ctx, *args, **kwargs):
+
+        super(Cursor, self).__init__(*args, **kwargs)
+
+        self._ctx = ctx
+        self._index = 0
+        self._len = None
+
+    def __len__(self):
+
+        result = self._len
+
+        if result is None:
+            result = maxsize if self._ctx else 0
+
+            for key in self._ctx:
+                result = min(result, len(self._ctx[key]))
+
+        return result
+
+    def __getitem__(self, key):
+
+        result = {}
+
+        for name in self._ctx:
+            result[name] = self._ctx[name][key]
+
+        return result
+
+    def __iter__(self):
+
+        while self._index < len(self):
+
+            yield self.__getitem__(self._index)
+
+            self._index += 1
+
+        raise StopIteration()

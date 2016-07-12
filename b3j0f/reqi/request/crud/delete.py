@@ -24,48 +24,14 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Specification of the request object."""
+"""Specification of the class Delete.
 
-__all__ = ['SetSlice', 'GetSlice', 'DelSlice']
+Equivalent to the DELETE statement in SQL."""
 
+__all__ = ['Delete']
 
-from .base import Expression
-from .func import Function
-from ..utils import updateitems
-
-from ..crud.update import Update, Slice
+from ..base import Node
 
 
-class GetSlice(Function):
-    pass
-
-
-Expression.__getslice__ = lambda self, i, j: GetSlice(params=[self, Slice(i, j)])
-
-class SetSlice(Function):
-
-    def _run(self):
-
-        expr, i, j, seq = self.params
-
-        updateitems(
-            self.ctx, expr, lambda item: item[expr.prop].__setslice__(i, j, seq)
-        )
-
-
-Expression.__setslice__ = lambda self, i, j, seq: Update(
-    pset={self.prop: Slice(i, j, seq)}
-)
-
-
-class DelSlice(Function):
-
-    def _run(self):
-
-        expr, i, j = self.params
-
-        updateitems(
-            self.ctx, expr, lambda item: item[expr.prop].__delslice__(i, j)
-        )
-
-Expression.__delslice__ = lambda self, i, j: DelSlice(params=[self, i, j])
+class Delete(Node):
+    """In charge of deleting data."""

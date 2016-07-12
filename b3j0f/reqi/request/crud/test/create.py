@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------
@@ -24,33 +25,23 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Specification of the class Create.
 
-Equivalent to the INSERT statement in SQL."""
+from unittest import main
 
-__all__ = ['Create']
+from b3j0f.utils.ut import UTCase
 
-from .base import Node
+from ..create import Create
 
 
-class Create(Node):
-    """In charge of refering model properties to create/update.
+class TestCreate(UTCase):
 
-    Properties are:
+    def test_constructor(self):
 
-    - pset: used to set model properties.
-    - punset: used only if this is an update element (ref must be not None).
-    - ref: referes to a filter for update elements. If None, this is just an
-        element creation (and punset is useless)."""
+        content = {None: None}
 
-    __slots__ = ['content']
+        create = Create(content=content)
 
-    def __init__(self, content=None, *args, **kwargs):
-        """
-        :param dict pset: properties to set. Key are property name, values are
-            constant values or
-        """
+        self.assertIs(create.content, content)
 
-        super(Create, self).__init__(*args, **kwargs)
-
-        self.content = content
+if __name__ == '__main__':
+    main()

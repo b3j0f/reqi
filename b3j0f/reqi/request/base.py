@@ -30,8 +30,8 @@ __all__ = ['Node']
 
 from uuid import uuid4 as uuid
 
-DEFAULT_OPTIMIZE = True
-ALIAS = 'ALIAS'
+DEFAULT_OPTIMIZE = True  #: default value for optimization
+ALIAS = 'ALIAS'  #: ctx key used to store alias
 
 
 class Node(object):
@@ -66,13 +66,16 @@ class Node(object):
     def updateref(self, ctx):
         """Update this node related to input ctx.
 
-        Optimizations are updating of references."""
+        Optimizations are updating of references.
+
+        :raises: KeyError if ref is not None and corresponding alias does not
+        exist."""
 
         if self.alias is not None:
             ctx.setdefault(ALIAS, {})[self.alias] = self
 
-        if self.ref in ctx:
-            self.ref = ctx.setdefault(ALIAS, {})[self.ref]
+        if ALIAS in ctx and self.ref in ctx[ALIAS]:
+            self.ref = ctx[ALIAS][self.ref]
 
     def getctxname(self):
         """Get node context name.
@@ -153,9 +156,10 @@ class Node(object):
         return ctx
 
     def _run(self, dispatcher, ctx):
+        """Custom run method."""
 
         if self.system is not None:
             system = dispatcher.systems[self.system]
-            system.run(nodes=[self], ctx=ctx)
+            ctx = system.run(nodes=[self], ctx=ctx)
 
         return ctx

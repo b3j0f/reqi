@@ -30,7 +30,23 @@ from unittest import main
 
 from b3j0f.utils.ut import UTCase
 
-from ..base import Node
+from ..base import Node, ALIAS
+
+
+class TestNode(Node):
+
+    def _run(self, dispatcher, ctx, *args, **kwargs):
+
+        nodes = ctx.setdefault(self.getctxname(), [])
+
+        nodes.append(
+            {
+                'system': self.system, 'schema': self.schema,
+                'count': len(nodes)
+            }
+        )
+
+        return ctx
 
 
 class NodeTest(UTCase):
@@ -141,6 +157,57 @@ class GetCtxName(UTCase):
 
         self._assert(ref=Node(alias='test'))
 
+
+class UpdateRefTest(UTCase):
+
+    def test_error(self):
+
+        node = Node(ref='test')
+
+        self.assertRaises(KeyError, node.updateref({}))
+
+    def test_default(self):
+
+        node = Node(ref='test')
+
+        node.updateref({ALIAS: {'test': 1}})
+
+        self.assertEqual(node.ref, 1)
+
+    def test_alias(self):
+
+        node = Node(alias='test')
+
+        ctx = {}
+
+        node.updateref(ctx)
+
+        self.assertIs(ctx[ALIAS]['test'], node)
+
+    def test_aliasref(self):
+
+        node = Node(alias='test')
+
+        ctx = {}
+
+        node.updateref(ctx)
+
+        node2 = Node(ref='test')
+
+        node2.updateref(ctx)
+
+        self.assertIs(node2.ref, node)
+
+
+class RunTest(UTCase):
+
+    def test_default(self):
+
+        node = TestNode(alias='a')
+
+        ctx = node.run(dispatcher=None)
+
+        self.assertIn('a', ctx)
 
 if __name__ == '__main__':
     main()

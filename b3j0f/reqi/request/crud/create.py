@@ -24,14 +24,33 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Specification of the class Delete.
+"""Specification of the class Create.
 
-Equivalent to the DELETE statement in SQL."""
+Equivalent to the INSERT statement in SQL."""
 
-__all__ = ['Delete']
+__all__ = ['Create']
 
-from .base import Node
+from ..base import Node
 
 
-class Delete(Node):
-    """In charge of deleting data."""
+class Create(Node):
+    """In charge of refering model properties to create/update.
+
+    Properties are:
+
+    - pset: used to set model properties.
+    - punset: used only if this is an update element (ref must be not None).
+    - ref: referes to a filter for update elements. If None, this is just an
+        element creation (and punset is useless)."""
+
+    __slots__ = ['content']
+
+    def __init__(self, content=None, *args, **kwargs):
+        """
+        :param dict pset: properties to set. Key are property name, values are
+            constant values or
+        """
+
+        super(Create, self).__init__(*args, **kwargs)
+
+        self.content = content
