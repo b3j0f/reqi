@@ -30,7 +30,9 @@ __all__ = ['Node']
 
 from uuid import uuid4 as uuid
 
-DEFAULT_OPTIMIZE = True  #: default value for optimization
+from inspect import getmembers, isroutine
+
+
 ALIAS = 'ALIAS'  #: ctx key used to store alias
 
 
@@ -41,41 +43,18 @@ class Node(object):
     For easying its use, it can be referee to an alias, and be refered by
     another node using the attribute `ref`."""
 
-    __slots__ = ['system', 'schema', 'alias', 'ref', 'ctx']
+    __slots__ = ['alias', 'ctx']
 
-    def __init__(
-            self, system=None, schema=None, alias=None, ref=None, ctx=None,
-            *args, **kwargs
-    ):
+    def __init__(self, alias=None, ref=None, ctx=None, *args, **kwargs):
         """
-        :param str system: system name.
-        :param str schema: schema name.
         :param str alias: alias name for the couple system/schema.
-        :param ref: alias reference. Alias name or reference to a request.
         :param dict ctx: node execution context.
         """
 
         super(Node, self).__init__(*args, **kwargs)
 
-        self.system = system
-        self.schema = schema
         self.alias = alias
-        self.ref = ref
         self.ctx = ctx
-
-    def updateref(self, ctx):
-        """Update this node related to input ctx.
-
-        Optimizations are updating of references.
-
-        :raises: KeyError if ref is not None and corresponding alias does not
-        exist."""
-
-        if self.alias is not None:
-            ctx.setdefault(ALIAS, {})[self.alias] = self
-
-        if ALIAS in ctx and self.ref in ctx[ALIAS]:
-            self.ref = ctx[ALIAS][self.ref]
 
     def getctxname(self):
         """Get node context name.
@@ -88,24 +67,81 @@ class Node(object):
         if self.alias:
             result = self.alias
 
-        elif self.ref is None:
-            if self.system:
-                result = self.system
-                if self.schema:
-                    result = ''.join([result, '.', self.schema])
-
-            elif self.schema:
-                result = self.schema
+        else:
+            result = str(self)
 
         return result
 
+    def elements(self, ctx):
+        """Return elements from ctx corresponding to this node.
+
+        :param dict ctx: execution context.
+        :return: elements corresponding to this.
+        :rtype: collections.Iterable"""
+
+        ctxname = self.getctxname()
+
+        return ctx.get(ctxname)
+
     def getsystems(self):
-        """Get all this system names.
+        """Get all systems accessible from this.
 
         :rtype: set
         """
 
-        result = [] if self.system is None else [self.system]
+        return []
+
+    def run(self, dispatcher, ctx=None):
+        """Run this node and return the context.
+
+        :param b3j0f.reqi.dispatch.Dispatcher dispatcher: dispatcher to run.
+        :param dict ctx: execution context.
+        :return: execution context.
+        :rtype: dict"""
+
+        if ctx is None:
+            ctx = {}
+
+        ctx = self._run(dispatcher=dispatcher, ctx=ctx) or ctx
+
+        self.ctx = ctx
+
+        return ctx
+
+    def _run(self, dispatcher, ctx):
+        """Custom run method.
+
+        :param b3j0f.reqi.dispatch.Dispatcher dispatcher: dispatcher to process.
+        :param dict ctx: execution context.
+        :return: ctx."""
+
+        if self.alias:
+            if ALIAS not in ctx:
+                ctx[ALIAS] = {}
+            ctx[ALIAS][self.alias] = self
+
+        return ctx
+
+
+class Ref(Node):
+    """Node reference to an aliased node."""
+
+    __slot__ = ['alias', 'ref']
+
+    def __init__(self, alias=None, ref=None, *args, **kwargs):
+        """
+        :param str alias: alias name from to where update ref.
+        :param Node ref: reference to another node.
+        """
+
+        super(Ref, self).__init__(*args, **kwargs)
+
+        self.alias = alias
+        self.ref = ref
+
+    def getsystems(self, *args, **kwargs):
+
+        result = super(Ref, self).getsystems(*args, **kwargs)
 
         if self.ref is not None:
 
@@ -117,49 +153,23 @@ class Node(object):
 
         return result
 
-    def copy(self, system):
-        """Copy this node in keeping sub nodes where system equals input system
-        or None.
+    def _run(self, dispatcher, ctx, *args, **kwargs):
 
-        :param str system: system name.
-        """
+        if self.ref is None:
+            if ALIAS in ctx and self.alias in ctx[ALIAS]:
+                self.ref = ctx[ALIAS][self.alias]
 
-        kwargs = {}
+            else:
+                raise ValueError('Alias {0} is missing.'.format(self.alias))
 
-        for slot in self.__slots__:
+        return ctx
 
-            kwargs[slot] = getattr(self, slot)
+    def getctxname(self, *args, **kwargs):
 
-        result = type(self)(**kwargs)
+        if self.ref is None:
+            result = super(Ref, self).getctxname(*args, **kwargs)
+
+        else:
+            result = self.ref.getctxname(*args, **kwargs)
 
         return result
-
-    def run(self, dispatcher, ctx=None, optimize=DEFAULT_OPTIMIZE):
-        """Run this node and return the context.
-
-        :param b3j0f.reqi.dispatch.Dispatcher dispatcher: dispatcher to run.
-        :param dict ctx: execution context.
-        :param bool optimize: if True (default), optimize this node.
-        :return: execution context.
-        :rtype: dict"""
-
-        if ctx is None:
-            ctx = {}
-
-        if optimize:
-            self.updateref(ctx=ctx)
-
-        ctx = self._run(dispatcher=dispatcher, ctx=ctx)
-
-        self.ctx = ctx
-
-        return ctx
-
-    def _run(self, dispatcher, ctx):
-        """Custom run method."""
-
-        if self.system is not None:
-            system = dispatcher.systems[self.system]
-            ctx = system.run(nodes=[self], ctx=ctx)
-
-        return ctx

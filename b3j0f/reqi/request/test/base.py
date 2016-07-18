@@ -30,21 +30,14 @@ from unittest import main
 
 from b3j0f.utils.ut import UTCase
 
-from ..base import Node, ALIAS
+from ..base import Node, ALIAS, Ref
 
 
 class TestNode(Node):
 
     def _run(self, dispatcher, ctx, *args, **kwargs):
 
-        nodes = ctx.setdefault(self.getctxname(), [])
-
-        nodes.append(
-            {
-                'system': self.system, 'schema': self.schema,
-                'count': len(nodes)
-            }
-        )
+        ctx.setdefault(self.getctxname(), []).append({'count': len(nodes)})
 
         return ctx
 
@@ -53,161 +46,104 @@ class NodeTest(UTCase):
 
     def test_constructor(self):
 
-        system = 'system'
-        schema = 'schema'
         alias = 'alias'
-        ref = 'ref'
         ctx = {}
 
-        node = Node(system=system, schema=schema, alias=alias, ref=ref, ctx=ctx)
+        node = Node(alias=alias, ctx=ctx)
 
-        self.assertEqual(node.system, system)
-        self.assertEqual(node.schema, schema)
         self.assertEqual(node.alias, alias)
-        self.assertEqual(node.ref, ref)
         self.assertEqual(node.ctx, ctx)
 
+    def test_elements(self):
 
-class GetSystems(UTCase):
+        alias = 'test'
+        elements = [1, 2]
 
-    def test_default(self):
+        ctx = {alias: elements}
+
+        node = Node(alias=alias)
+
+        nodeelements = node.elements(ctx)
+
+        self.assertIs(nodeelements, elements)
+
+    def test_notelements(self):
+
+        self.assertIsNone(Node().elements({}))
+
+    def test_getsystems(self):
+
+        self.assertFalse(Node().getsystems())
+
+    def test_getctxname(self):
+
+        self.assertEqual('test', Node(alias='test').getctxname())
+
+    def test_defaultgetctxname(self):
 
         node = Node()
 
-        systems = node.getsystems()
+        self.assertEqual(str(node), node.getctxname())
 
-        self.assertFalse(systems)
+    def test_run(self):
 
-    def test_system(self):
+        ctx = {}
+        node = Node(alias='test')
+        node.run(dispatcher=None, ctx=ctx)
 
-        system = 'test'
+        self.assertEqual(ctx, {ALIAS: {node.alias: node}})
 
-        node = Node(system=system)
 
-        systems = node.getsystems()
+class RefTest(UTCase):
 
-        self.assertEqual(systems, [system])
+    def test_constructor(self):
+
+        alias = 'alias'
+        node = Node()
+
+        ref = Ref(alias=alias, ref=node)
+
+        self.assertIs(ref.alias, alias)
+        self.assertIs(ref.ref, node)
+
+    def test_systems(self):
+
+        system = 'system'
+
+        class TestNode(Node):
+
+            def getsystems(self):
+
+                return ['system']
+
+        ref = Ref(ref=TestNode())
+
+        self.assertEqual(ref.getsystems(), [system])
 
     def test_defaultrefdefault(self):
 
-        node = Node(ref=Node())
+        self.assertFalse(Ref(ref=Node()).getsystems())
 
-        systems = node.getsystems()
+    def test_run(self):
 
-        self.assertFalse(systems)
+        alias = 'test'
 
-    def test_defaultref(self):
+        node = Node(alias=alias)
 
-        system = 'test'
+        ctx = {ALIAS: {alias: node}}
 
-        node = Node(ref=Node(system=system))
+        ref = Ref(alias=alias)
+        ref.run(dispatcher=None, ctx=ctx)
 
-        systems = node.getsystems()
+        self.assertIs(ref.ref, node)
 
-        self.assertEqual(systems, [system])
+    def test_getctxname(self):
 
-    def test_refdefault(self):
+        ctxname = 'test'
 
-        system = 'test'
+        ref = Ref(ref=Node(alias=ctxname))
 
-        node = Node(ref=Node(), system=system)
-
-        systems = node.getsystems()
-
-        self.assertEqual(systems, [system])
-
-    def test_ref(self):
-
-        system = 'test'
-        refsystem = 'example'
-
-        node = Node(ref=Node(system=refsystem), system=system)
-
-        systems = node.getsystems()
-
-        self.assertEqual(systems, [system, refsystem])
-
-
-class GetCtxName(UTCase):
-    """Test the method getctxname."""
-
-    def _assert(self, ctxname=None, **kwargs):
-
-        node = Node(**kwargs)
-
-        self.assertEqual(node.getctxname(), ctxname)
-
-    def test_default(self):
-
-        self._assert()
-
-    def test_system(self):
-
-        self._assert('system', system='system')
-
-    def test_schema(self):
-
-        self._assert('schema', schema='schema')
-
-    def test_systemschema(self):
-
-        self._assert('system.schema', system='system', schema='schema')
-
-    def test_ref(self):
-
-        self._assert(ref=Node(alias='test'))
-
-
-class UpdateRefTest(UTCase):
-
-    def test_error(self):
-
-        node = Node(ref='test')
-
-        self.assertRaises(KeyError, node.updateref({}))
-
-    def test_default(self):
-
-        node = Node(ref='test')
-
-        node.updateref({ALIAS: {'test': 1}})
-
-        self.assertEqual(node.ref, 1)
-
-    def test_alias(self):
-
-        node = Node(alias='test')
-
-        ctx = {}
-
-        node.updateref(ctx)
-
-        self.assertIs(ctx[ALIAS]['test'], node)
-
-    def test_aliasref(self):
-
-        node = Node(alias='test')
-
-        ctx = {}
-
-        node.updateref(ctx)
-
-        node2 = Node(ref='test')
-
-        node2.updateref(ctx)
-
-        self.assertIs(node2.ref, node)
-
-
-class RunTest(UTCase):
-
-    def test_default(self):
-
-        node = TestNode(alias='a')
-
-        ctx = node.run(dispatcher=None)
-
-        self.assertIn('a', ctx)
+        self.assertEqual(ref.getctxname(), ctxname)
 
 if __name__ == '__main__':
     main()
