@@ -24,38 +24,41 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Specification of the expression object."""
+"""Specification of expression utilities."""
 
-__all__ = ['Expression']
+__all__ = ['getctxname', 'getsysscheprop']
 
-from ..base import Node
+from six.moves.urllib.parse import quote, unquote
 
-from .utils import getctxname
+NAME_SEPARATOR = '/'  #: context name element separator.
 
 
-class Expression(Node):
-    """Expression request object."""
+def getctxname(system=None, schema=None, prop=None):
+    """Get context name from system, schema and property names.
 
-    __slots__ = ['system', 'schema', 'prop']
+    :param str system: system name.
+    :param str schema: schema name.
+    :param str prop: property name.
+    :rtype: str"""
 
-    def __init__(self, system=None, schema=None, prop=None, *args, **kwargs):
-        """
-        :param str system: system name.
-        :param str schema: schema name.
-        :param str prop: property name.
-        """
+    return '{1}{0}{2}{0}{3}'.format(
+        NAME_SEPARATOR,
+        quote(system, safe='') if system else '',
+        quote(schema, safe='') if schema else '',
+        quote(prop, safe='') if prop else ''
+    )
 
-        super(Expression, self).__init__(*args, **kwargs)
 
-        self.system = system
-        self.schema = schema
-        self.prop = prop or type(self).__name__
+def getsysschprop(ctxname):
+    """Get names of system, schema and prop from ctxname.
 
-    def getctxname(self, *args, **kwargs):
+    :param str ctxname: context name to convert to sys, schema and prop names
+    :rtype: tuple"""
 
-        result = super(Expression, self).getctxname(*args, **kwargs)
+    system, schema, prop = ctxname.split(NAME_SEPARATOR)
 
-        if self.alias is None:
-            result = getctxname(system=system, schema=schema, prop=prop)
+    system = unquote(system) if system else None
+    schema = unquote(schema) if schema else None
+    prop = unquote(prop) if prop else None
 
-        return result
+    return system, schema, prop
