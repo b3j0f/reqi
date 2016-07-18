@@ -38,6 +38,8 @@ class And(Function):
 
     def _run(self, dispatcher, ctx, *args, **kwargs):
 
+        super(And, self)._run(dispatcher=dispatcher, ctx=ctx, *args, **kwargs)
+
         systems = self.getsystems()
 
         for sysname in systems:

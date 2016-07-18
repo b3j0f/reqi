@@ -32,6 +32,7 @@ from b3j0f.utils.ut import UTCase
 
 from ..core import Request
 from ..base import Node, ALIAS
+from .base import TestNode
 from ...dispatch import Dispatcher
 from ...test.sys import TestSystem as TS
 
@@ -77,7 +78,7 @@ class RequestRunTest(UTCase):
 
     def test_nodes(self):
 
-        nodes = [Node(alias='1', system='1'), Node(alias='2', system='2')]
+        nodes = [TestNode(alias='1'), TestNode(alias='2')]
 
         request = Request(dispatcher=self.dispatcher, nodes=nodes)
 
@@ -86,28 +87,12 @@ class RequestRunTest(UTCase):
         self.assertEqual(
             ctx,
             {
-                '1': [nodes[0]],
-                '2': [nodes[1]],
+                '1': [{'count': 0}],
+                '2': [{'count': 0}],
                 ALIAS: {
                     '1': nodes[0],
                     '2': nodes[1]
                 }
-            }
-        )
-
-    def test_nodes_nooptimize(self):
-
-        nodes = [Node(alias='1', system='1'), Node(alias='2', system='2')]
-
-        request = Request(dispatcher=self.dispatcher, nodes=nodes)
-
-        ctx = request.run(optimize=False)
-
-        self.assertEqual(
-            ctx,
-            {
-                '1': [nodes[0]],
-                '2': [nodes[1]]
             }
         )
 
@@ -128,16 +113,6 @@ class RequestRunTest(UTCase):
                 }
             }
         )
-
-    def test_nodes_wosystem_notoptimize(self):
-
-        nodes = [Node(alias='1'), Node(alias='2')]
-
-        request = Request(dispatcher=self.dispatcher, nodes=nodes)
-
-        ctx = request.run(optimize=False)
-
-        self.assertFalse(ctx)
 
     def test_force(self):
 

@@ -30,28 +30,26 @@ __all__ = ['Dispatcher']
 
 from b3j0f.utils.version import OrderedDict
 
-from .request.queue import RequestQueue, DEFAULT_OPTIMIZE
+from .request.queue import RequestQueue
 
 
 class Dispatcher(object):
     """In charge of dispatching requests."""
 
     __slots__ = [
-        'systems', 'optimize',
+        'systems',
         '_systemsperschema',
         '_schemaspersystem', '_schemasbyname', '_schemasperprop'
     ]
 
-    def __init__(self, systems, optimize=DEFAULT_OPTIMIZE, *args, **kwargs):
+    def __init__(self, systems, *args, **kwargs):
         """
         :param dict systems: systems by name to handle.
-        :param bool optimize: if True (default) optimize requests.
         """
 
         super(Dispatcher, self).__init__(*args, **kwargs)
 
         self.systems = systems
-        self.optimize = optimize
 
         self._systemsperschema = OrderedDict()
         self._schemaspersystem = OrderedDict()
@@ -191,7 +189,7 @@ class Dispatcher(object):
 
         :rtype: RequestQueue"""
 
-        return RequestQueue(dispatcher=self, optimize=self.optimize)
+        return RequestQueue(dispatcher=self)
 
 
 def _removeoccurences(l):

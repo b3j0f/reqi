@@ -28,8 +28,6 @@
 
 __all__ = ['Request']
 
-from .base import DEFAULT_OPTIMIZE
-
 
 class Request(object):
     """In charge of executing nodes.
@@ -54,21 +52,19 @@ class Request(object):
         self.dispatcher = dispatcher
         self.resctx = None
 
-    def run(self, force=False, optimize=True):
+    def run(self, force=False):
         """Execute this nodes.
 
         :param bool force: force running even if resctx exist already.
-        :param bool optimize: if True, optimize nodes.
         :rtype: dict"""
 
         if force or self.resctx is None:
 
-            self.resctx = self.ctx or {}
+            self.resctx = {} if self.ctx is None else self.ctx.copy()
 
             for node in self.nodes:
                 self.resctx = node.run(
-                    dispatcher=self.dispatcher, ctx=self.resctx,
-                    optimize=optimize
+                    dispatcher=self.dispatcher, ctx=self.resctx
                 )
 
         result = self.resctx

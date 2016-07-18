@@ -37,7 +37,13 @@ class TestNode(Node):
 
     def _run(self, dispatcher, ctx, *args, **kwargs):
 
-        ctx.setdefault(self.getctxname(), []).append({'count': len(nodes)})
+        super(TestNode, self)._run(
+            dispatcher=dispatcher, ctx=ctx, *args, **kwargs
+        )
+
+        nodes = ctx.setdefault(self.getctxname(), [])
+
+        nodes.append({'count': len(nodes)})
 
         return ctx
 
