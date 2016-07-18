@@ -56,6 +56,8 @@ class Expression(Node):
         result = super(Expression, self).getctxname(*args, **kwargs)
 
         if self.alias is None:
-            result = getctxname(system=system, schema=schema, prop=prop)
+            result = getctxname(
+                system=self.system, schema=self.schema, prop=self.prop
+            )
 
         return result
