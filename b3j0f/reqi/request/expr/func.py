@@ -26,6 +26,8 @@
 
 """Specification of the function object."""
 
+__all__ = ['Function', 'PropertyFunction']
+
 from .base import Expression
 from ..base import Node
 from ..utils import updateitems
@@ -38,7 +40,7 @@ class Function(Expression):
 
     __slots__ = ['params', 'rtype']
 
-    def __init__(self, params=None, rtype=None, prop=None, *args, **kwargs):
+    def __init__(self, params=None, rtype=None, *args, **kwargs):
         """
         :param list params: list of values.
         :param type rtype: return type.
@@ -50,15 +52,6 @@ class Function(Expression):
 
         self.params = [] if params is None else params
         self.rtype = rtype
-        self.prop = prop or type(self).__name__
-
-    def updateref(self, ctx, *args, **kwargs):
-
-        super(Function, self).updateref(ctx=ctx, *args, **kwargs)
-
-        for param in self.params:
-            if isinstance(param, Node):
-                param.updateref(ctx=ctx)
 
     def getsystems(self, *args, **kwargs):
 

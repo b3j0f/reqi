@@ -30,38 +30,28 @@ from unittest import main
 
 from b3j0f.utils.ut import UTCase
 
-from ..base import Expression
-from ..base import getctxname
+from ..func import Function
 
 
-class ExpressionTest(UTCase):
+class FunctionTest(UTCase):
 
     def test_defaultconstructor(self):
 
-        expr = Expression()
+        func = Function()
 
-        self.assertEqual(expr.prop, type(expr).__name__)
+        self.assertFalse(func.params)
+        self.assertIsNone(func.rtype)
+        self.assertEqual(func.prop, type(func).__name__)
 
     def test_constructor(self):
 
-        system = 'system'
-        schema = 'schema'
-        prop = 'prop'
+        params = [1, 2]
+        rtype = bool
 
-        expr = Expression(system=system, schema=schema, prop=prop)
+        func = Function(params=params, rtype=rtype)
 
-        ctxname = expr.getctxname()
-
-        self.assertEqual(ctxname, getctxname(system, schema, prop))
-
-    def test_getnosystems(self):
-
-        self.assertFalse(Expression().getsystems())
-
-    def test_getsystems(self):
-
-        self.assertEqual(Expression(system='system').getsystems(), ['system'])
-
+        self.assertIs(func.params, params)
+        self.assertIs(func.rtype, rtype)
 
 if __name__ == '__main__':
     main()

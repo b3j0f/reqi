@@ -36,7 +36,10 @@ from time import time
 
 
 class Now(Function):
+    """Nonce function."""
 
-    def _run(self):
+    def _run(self, *args, **kwargs):
+
+        super(Now, self)._run(*args, **kwargs)
 
         self.ctx[self.getctxname()] = time()

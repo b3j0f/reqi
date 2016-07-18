@@ -61,3 +61,12 @@ class Expression(Node):
             )
 
         return result
+
+    def getsystems(self, *args, **kwargs):
+
+        result = super(Expression, self).getsystems(*args, **kwargs)
+
+        if self.system:
+            result.append(self.system)
+
+        return result
