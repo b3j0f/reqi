@@ -112,7 +112,7 @@ class RefTest(UTCase):
         self.assertIs(ref.alias, alias)
         self.assertIs(ref.ref, node)
 
-    def test_systems(self):
+    def test_systemcount(self):
 
         system = 'system'
 
@@ -120,7 +120,7 @@ class RefTest(UTCase):
 
             def getsystems(self):
 
-                return ['system']
+                return [system]
 
         ref = Ref(ref=TestNode())
 

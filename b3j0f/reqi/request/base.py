@@ -84,9 +84,9 @@ class Node(object):
         return ctx.get(ctxname)
 
     def getsystems(self):
-        """Get all systems accessible from this.
+        """system names.
 
-        :rtype: set
+        :rtype: list
         """
 
         return []
@@ -102,7 +102,8 @@ class Node(object):
         if ctx is None:
             ctx = {}
 
-        ctx = self._run(dispatcher=dispatcher, ctx=ctx) or ctx
+        if self.getctxname() not in ctx:  # run this only if not already in ctx
+            ctx = self._run(dispatcher=dispatcher, ctx=ctx) or ctx
 
         self.ctx = ctx
 
@@ -145,11 +146,7 @@ class Ref(Node):
 
         if self.ref is not None:
 
-            systems = self.ref.getsystems()
-
-            result += [
-                system for system in systems if system not in result
-            ]
+            result += self.ref.getsystems()
 
         return result
 

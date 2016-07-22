@@ -32,6 +32,8 @@ from .base import Expression
 from ..base import Node
 from ..utils import updateitems
 
+__STACK__ = '__STACK__'  #: stack of function by parents
+
 
 class Function(Expression):
     """Function request object.
@@ -59,55 +61,98 @@ class Function(Expression):
 
         for param in self.params:
             if isinstance(param, Node):
-                result += [
-                    sys for sys in param.getsystems(*args, **kwargs)
-                    if sys not in result
-                ]
+                result += param.getsystems(*args, **kwargs)
 
         return result
 
     def _run(self, dispatcher, ctx, *args, **kwargs):
 
-        ctx = super(Function, self)._run(
+        result = super(Function, self)._run(
             dispatcher=dispatcher, ctx=ctx, *args, **kwargs
         )
 
         systems = self.getsystems()
 
-        if systems:
+        selfsystem = self.system
+        __stack__ = ctx.setdefault(__STACK__, [])
 
-            if len(systems) == 1:
-                system = dispatcher.systems[systems[0]]
+        if not __stack__:
+            __stack__.append(self)
 
-                ctx = system.run(node=self, ctx=ctx)
+        elif __stack__[-1].system != selfsystem:
+            if selfsystem is None:
+                __stack__.append(self)
+
+            elif len(__stack__) > 1 and __stack__[-2] != selfsystem:
+                __stack__.append(self)
+
+        if systems:  # if execution might be delegated to a system
+
+            ssys = set(systems)
+            _systems = systems
+            if len(ssys) > 1:
+
+                for param in self.params:
+
+                    if isinstance(param, Node):
+
+                            # stop execution when systems is unique
+                            if len(set(_systems)) <= 1:
+
+                                if _systems:
+                                    laststack = __stack__[-1]
+
+                                    if (
+                                            laststack.system is not None
+                                            and laststack.system != systocall
+                                    ):
+                                        result = param.run(
+                                            dispatcher=dispatcher, ctx=result
+                                        )
+
+                                break
+
+                            else:
+                                psystems = param.getsystems()
+                                print('param', param.alias)
+                                _systems = _systems[len(psystems):]
+                                result = param.run(
+                                    dispatcher=dispatcher, ctx=result
+                                )
+
+        if self is __stack__[-1]:
+            __stack__.pop()
+
+            if selfsystem is None:
+                sname = systems[-1] if systems else None
 
             else:
-                for param in self.params:
-                    if isinstance(param, Node):
-                        ctx = param.run(
-                            dispatcher=dispatcher, ctx=ctx, optimize=False
-                        )
+                sname = selfsystem
+            print(self.alias)
+            if sname is None:
+                result = self._prun(dispatcher=dispatcher, ctx=result)
 
-        else:
-            ctx = self.__run(ctx=ctx)
+            else:
+                system = dispatcher.systems[sname]
+                result = system.run(
+                    nodes=[self], dispatcher=dispatcher, ctx=result
+                )
 
-        return ctx
+        return result
 
-    def __run(self, ctx):
+    def _prun(self, dispatcher, ctx):
         """Function behavior."""
-
-        raise NotImplementedError()
 
     def getctxname(self, *args, **kwargs):
 
         result = super(Function, self).getctxname(*args, **kwargs)
 
-        ''.join(result, '(')
+        if self.alias is None:
 
-        for param in self.params:
-            result = ''.join(result, ',', str(param))
+            for param in self.params:
+                result = ''.join([result, ',', str(param)])
 
-        ''.join(result, '(')
+            result = ''.join(['(', result, ')'])
 
         return result
 
