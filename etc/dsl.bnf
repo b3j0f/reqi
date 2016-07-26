@@ -1,20 +1,13 @@
 (* keywords definition *)
 
-@@keyword :: TRUE FALSE true false
-@@keyword :: AS as
-@@keyword :: NULL null VOID void NONE none
-@@keyword :: WHERE where ?
-@@keyword :: READ read get return
-@@keyword :: CREATE create new
-@@keyword :: UPDATE update set
-@@keyword :: DELETE delete del
-
-ask = "AS" | "as" | "~" ;
-wherek "WHERE" | "where" | "?" ;
-readk = "READ" | "read" | "get" | "return" ;
-createk = "CREATE" | "create" | "new" ;
-updatek = "UPDATE" | "update" | "set" ;
-deletek = "DELETE" | "delete" | "del" ;
+@@keyword :: TRUE FALSE
+@@keyword :: AS
+@@keyword :: NULL
+@@keyword :: WHERE
+@@keyword :: READ
+@@keyword :: CREATE
+@@keyword :: UPDATE
+@@keyword :: DELETE
 
 (* symbols definition *)
 
@@ -31,96 +24,43 @@ natural = { digit }+ ;
 sign = "+" | "-" ;
 integer = [ sign ] natural ;
 decimal = [ sign ] natural "." natural ;
-boolean = "TRUE" | "FALSE" | "true" | "false" ;
-null = "NULL" | "null" | "VOID" | "void" | "NONE" | "none" ;
+boolean = "TRUE" | "FALSE" ;
+null = "NULL" ;
 
-(* complex type definition *)
-
-value = string:string | integer:integer | decimal:decimal | boolean:boolean ;
-property_name = identifier ;
+value = string | number | decimal | boolean | null ;
 alias = identifier ;
-aliased_property = alias:alias "." propname:property_name ;
-aliases = ",".{ alias:alias } ;
-cond_operator = ">" | "<" | ">=" | "<=" | "=" | "!=" | "~=" ;
+aliased_property = alias "." identifier ;
+conditional_operator = ">" | "<" | ">=" | "<=" | "=" | "!=" | "~=" ;
 numerical_operator = "+" | "-" | "*" | "/" | "%" | "^" ;
+property = identifier ;
+system = identifier ;
+model = identifier ;
+model_property = [ model "." ] property ;
+system_model = [ system "." ] model ;
+system_property = [ [ system "." ] model "." ] property ;
 
-expression = value | aliased_property ;
+model_reference = system_model | alias ;
+property_reference = system_property | aliased_property ;
 
-type = identifier ;
-types = ",".{ type } ;
-property_cond = propname:property_name op:cond_operator expr:expression ;
-properties_cond = ",".{ property_cond } ;
+numerical_expression = property_reference numerical_operator expression_value ;
+conditional_expression = property_reference conditional_operator expression_value ;
 
-(* walkthrough elements definition *)
+expression_value = value | function | property_reference | numerical_expression ;
 
-elements = "(" types:types ")" [ "{" props:properties_cond "}" ] ;
-aliased_elements = elts:elements [ "AS" alias:alias ] ;
+expression = ("(" expression ")") | expression_value ;
 
-backward = "<" | "-" ;
-forward = "-" | ">" ;
-cardinality = [ natural ] [ ".." ] [ natural ] ;
-walk_mode = "DEPTH" | "WIDE" ;
-base_joint = bw:backward aliased_elements fw:forward [ card:cardinality ] [ wmode:walk_mode ] ;
+function = system_property "(" ",".{ expression }+ ")";
 
-node_joint = base_joint ;
-relationship_joint = base_joint ;
+filter = "WHERE" ( " AND " | " OR " ).{ conditional_expression }+ ;
 
-joint = gjoint:graph_joint | ejoint:elt_joint | njoint:node_joint | rjoint:relationship_joint ;
+update = "UPDATE" model_reference ( ( "SET" "{" property "=" expression_value "}" ) | ( "UNSET" ",".property ) ) [ where ] ;
 
-path = aliased_elements { joint [ aliased_elements ] } ;
-walkthrough_stmt = "FROM" path:path ;
-walkthrough_stmts = { walkstmt+:walkthrough_stmt }+ ;
+read = "SELECT" ",".{ expression_value [ "AS" alias ] }+ "FROM" ",".{ system [ "AS" alias ] }+ [ filter ] ;
 
-(* filter elements definition *)
+create = "CREATE" ",".( model_reference "{" ",".{ property "=" value_expression }* "}" ) [ filter ] ;
 
-condition = prop:aliased_property op:cond_operator expr:expression ;
-filter_stmt = "WHERE" "AND".{ filter+:condition } ;
+delete = "DELETE" ",".{ model_reference }+ [ where ] ;
 
-(* CRUD elements definition *)
+crud = create | read | update | delete;
 
-new_property = propname:property_name "=" expr:expression ;
-new_properties = ",".{ new_property } ;
-new_cardinality = natural ;
-new_data = "(" type:type props+:new_properties ")" [ "AS" alias:alias ] [ card:new_cardinality ] ;
-create_stmt = "INSERT" ",".{ data+:new_data } ;
-
-read_stmt = "SELECT" aliases+:aliases ;
-
-update_keyword = "SET" | "UNSET" | "ADDTOSET" | "DELFROMSET" ;
-update_alias = alias:alias op:update_keyword expr:expression ;
-update_data = ",".{ update_alias } ;
-update_stmt = "UPDATE" data+:update_data ;
-
-delete_stmt = "DELETE" aliases+:aliases ;
-
-crud_stmt = create:create_stmt | read:read_stmt | update:update_stmt | delete:delete_stmt ;
-
-(* Request final definition *)
-
-request = walkthrough_stmts filter_stmt crud_stmt ;
-
-start = request ;
-
-(* end of graph dsl *)
-
-delete = deletek identifier { "," identifier }* ;
-
-update = updatek identifier "{" identifier { "=" | "+=" | "-=" } value {"," identifier "=" value }* "}" { "," identifier "{" identifier "=" value {"," identifier "=" value }* "}" }* ;
-
-read = readk expression [ ask alias ]
-
-create = createk identifier "{" identifier "=" value {"," identifier "=" value }* "}" {"," identifier "{" identifier "=" value {"," identifier "=" value }* "}" }* ;
-
-crud = create | read | update | delete ;
-
-cond = identifier cond_operator value ;
-
-function = identifier "(" params ")" | cond ;
-
-expression = function ;
-
-filter = wherek { group | expression } [ask alias] {"AND" | "OR" { group | expression } }* ;
-
-request = filter | crud ;
-
-start = request { "\n" request }* ;
+start = crud ;
