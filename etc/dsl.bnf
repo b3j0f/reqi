@@ -27,7 +27,7 @@ decimal = [ sign ] natural "." natural ;
 boolean = "TRUE" | "FALSE" ;
 null = "NULL" ;
 
-value = string | number | decimal | boolean | null ;
+value = string | integer | decimal | boolean | null ;
 alias = identifier ;
 aliased_property = alias "." identifier ;
 conditional_operator = ">" | "<" | ">=" | "<=" | "=" | "!=" | "~=" ;
