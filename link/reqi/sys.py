@@ -28,39 +28,18 @@
 
 __all__ = ['System']
 
-from b3j0f.schema import getschema
-
 
 class System(object):
-    """In charge of dispatching requests."""
+    """In charge of processing requests thanks to both querymanager and model.
+    """
 
-    def __init__(
-    		self,
-            schema=None, schemas=None, dimensions=None, *args, **kwargs
-    ):
+    def __init__(self, model, querymanager, *args, **kwargs):
         """
-        :param b3j0f.schema.Schema schema: system schema. Default is getschema
-            of this.
-        :param list of System dependencies: list of system dependencies.
-        :param list schemas: supported schemas.
-        :param list dimensions: list of supported dimensions.
+        :param link.model.Model model: model.
+        :param link.dbrequest.QueryManager querymanager: query manager.
         """
 
         super(System, self).__init__(*args, **kwargs)
 
-        self.schema = schema or getschema(type(self))
-        self.schemas = schemas or []
-        self.dimensions = dimensions or []
-
-    def run(self, nodes, ctx=None):
-        """
-        Run input nodes.
-
-        :param list nodes: nodes to run.
-        :param dict ctx: execution context.
-        :return: execution context where keys are node ctxnames and values are
-            model values.
-        :rtype: dict
-        """
-
-        raise NotImplementedError()
+        self.model = model
+        self.querymanager = querymanager

@@ -30,17 +30,50 @@ __all__ = ['Dispatcher']
 
 from b3j0f.utils.version import OrderedDict
 
-from .request.queue import RequestQueue
+from .urils import getidentifiers, getname
+
+from link.middleware import Middleware
+
+from link.dbrequest.assignment import A
+from link.dbrequest.comparison import CombinedCondition, C
+from link.dbrequest.expression import E, F, CombinedExpression
+from link.dbrequest.tree import Value
+
+from uuid import uuid4 as uuid
+
+
+_CTXNAME = '_ctxname'  #: ctx name for nodes.
+
+
+def ctxname(node):
+    """Get/Set a context name from input node.
+
+    The context name is setted to the _CTXNAME attribute."""
+
+    result = getattr(node, _CTXNAME, None)
+
+    if result is None:
+
+        if isinstance(node, E):
+            result = node.name
+
+            if isinstance(node, F):
+                result = '{0}{1}'.format(
+                    result, ','.join(map(ctxname, node.arguments))
+                )
+
+        else:
+            result = uuid()
+
+        setattr(node, _CTXNAME, result)
+
+    return result
 
 
 class Dispatcher(object):
     """In charge of dispatching requests."""
 
-    __slots__ = [
-        'systems',
-        '_systemsperschema',
-        '_schemaspersystem', '_schemasbyname', '_schemasperprop'
-    ]
+    __slots__ = ['systems']
 
     def __init__(self, systems, *args, **kwargs):
         """
@@ -51,37 +84,86 @@ class Dispatcher(object):
 
         self.systems = systems
 
-        self._systemsperschema = OrderedDict()
-        self._schemaspersystem = OrderedDict()
-        self._schemasbyname = OrderedDict()
-        self._schemasperprop = OrderedDict()
-
         self._loadsystems()
 
-    def _loadsystems(self):
-        """Load this systems in referencing sys name by schema and reciprocally.
-        """
+    def subdivise(self, node):
+        """Subdivise input query to queries by systems.
 
-        self._systemsperschema.clear()
-        self._schemaspersystem.clear()
-        self._schemasbyname.clear()
-        self._schemasperprop.clear()
+        :param link.dbrequest.tree.Node node: node from where create system
+            nodes.
+        :return: nodes by system.
+        :rtype: dict"""
 
-        for sysn in self.systems:
+        result = {}
 
-            system = self.systems[sysn]
+        def updateresult(toupdate):
 
-            for schema in system.schemas:
+            for key in toupdate:
+                result.setdefault(key, []).__radd__(toupdate[key])
 
-                schn = schema.name
+        def registernode(node, **kwargs):
 
-                self._schemasbyname[schn] = schema
-                self._schemaspersystem.setdefault(sysn, []).append(schn)
-                self._systemsperschema.setdefault(schn, []).append(sysn)
+            system, schema, prop = getidentifiers(node.propname)
+            newnode = A(prop, **kwargs)
+            result.setdefault(system, []).append(newnode)
 
-                for propn in schema:
+        system, _, _ = getidentifiers(node.name)
 
-                    self._schemasperprop.setdefault(propn, []).append(schn)
+        if isinstance(node, A):
+            registernode(unset=node.unset, val=node.val)
+
+        elif isinstance(node, CombinedCondition):
+
+            lsubdivise = self.subdivise(node.left)
+            rsubdivise = self.subdivise(node.right)
+
+            updateresult(lsubdivise)
+            updateresult(rsubdivise)
+
+        elif isinstance(node, C):
+
+            value = node.value
+
+            if not isinstance(value, Value):
+                vsubdivise = self.subdivise(value)
+                updateresult(vsubdivise)
+
+            registernode(node, value=node.value, operator=node.operator)
+
+        elif isinstance(node, (E, F, CombinedExpression)):
+
+            if isinstance(node, F):
+
+                for arg in node.arguments:
+                    subdivision = self.subdivise(arg)
+                    updateresult(subdivision)
+
+                system, _, _ = getidentifiers(node.name)
+
+                if system:
+                    self.processnode(node)
+
+            elif isinstance(node, E):
+
+                pass
+
+            raise NotImplementedError()
+
+        return result
+
+    def processnode(node, command=None):
+
+        result = {}
+
+        subdivision = self.subdivise(node)
+
+        for name in subdivision:
+            system = self.systems[name]
+            sysresult = getattr(system, command)(node)
+
+            result.update(sysresult)
+
+        return result
 
     def getsystemswithschemas(
             self, system=None, schema=None, prop=None,
